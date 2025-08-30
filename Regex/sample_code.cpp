@@ -1,6 +1,7 @@
 // Complex C++ program for lexer testing
 // Includes all requested features: conditionals, loops, operators, etc.
-
+#include <string>
+using namespace std;
 int calculate_sum(int a, int b) {
     int result = a + b;
     return result;
@@ -38,7 +39,7 @@ bool validate_input(int x, float y) {
     }
 }
 
-fn void loop_demo(int count) {
+void loop_demo(int count) {
     int i = 0;
     
     // While loop
@@ -60,7 +61,7 @@ fn void loop_demo(int count) {
     }
 }
 
-fn void operator_demo() {
+void operator_demo() {
     int a = 10;
     int b = 3;
     
@@ -68,6 +69,7 @@ fn void operator_demo() {
     int add = a + b;
     int sub = a - b;
     int mul = a * b;
+
     float div = a / b;
     int mod = a % b;
     
@@ -98,7 +100,7 @@ fn void operator_demo() {
 }
 
 // Main function
-fn int main() {
+int main() {
     // Test all features
     int x = 42;
     float y = 3.14;
