@@ -38,19 +38,19 @@ g++ -std=c++17 Non_Regex/main.cpp Non_Regex/lexer.cpp Non_Regex/token.cpp -o Non
 Tokens are printed without line/column in the console, but the lexer stores positions internally for error messages.
 
 ### Test cases
-Comprehensive tests and error cases are provided under `Non_Regex/tests`.
+Comprehensive tests and error cases are provided under the shared `tests/` directory (used by both lexers).
 
 - Run the comprehensive valid test:
 ```bash
-./Non_Regex/non_regex_demo Non_Regex/tests/heavy_valid.src
+./Non_Regex/non_regex_demo tests/heavy_valid.src
 ```
 
 - Error-focused tests (each should throw a clear error):
 ```bash
-./Non_Regex/non_regex_demo Non_Regex/tests/err_invalid_identifier.src
-./Non_Regex/non_regex_demo Non_Regex/tests/err_unterminated_string.src
-./Non_Regex/non_regex_demo Non_Regex/tests/err_unterminated_char.src
-./Non_Regex/non_regex_demo Non_Regex/tests/err_unterminated_block_comment.src
+./Non_Regex/non_regex_demo tests/err_invalid_identifier.src
+./Non_Regex/non_regex_demo tests/err_unterminated_string.src
+./Non_Regex/non_regex_demo tests/err_unterminated_char.src
+./Non_Regex/non_regex_demo tests/err_unterminated_block_comment.src
 ```
 
 Notes:
@@ -72,9 +72,10 @@ The Regex lexer expects a source file path:
 ```bash
 ./Regex/regex_demo <path/to/source_file>
 ```
-Example:
+Examples:
 ```bash
 ./Regex/regex_demo Non_Regex/sample.src
+./Regex/regex_demo tests/heavy_valid.src
 ```
 
 The Regex version prints tokens via `toString()` (includes type/value and may include position info depending on implementation).
@@ -95,7 +96,9 @@ g++ -std=c++17 Regex/main.cpp Regex/lexer.cpp Regex/token.cpp -o Regex/regex_dem
 # Run Non_Regex
 ./Non_Regex/non_regex_demo                    # demo input
 ./Non_Regex/non_regex_demo Non_Regex/sample.src
+./Non_Regex/non_regex_demo tests/heavy_valid.src
 
 # Run Regex
 ./Regex/regex_demo Non_Regex/sample.src
+./Regex/regex_demo tests/heavy_valid.src
 ```
