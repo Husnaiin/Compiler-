@@ -12,7 +12,7 @@ Both versions build to small CLI programs you can run against source files.
 
 ### Clone
 ```bash
-git clone <your-repo-url> Compiler-
+git clone https://github.com/Husnaiin/Compiler-.git
 cd Compiler-
 ```
 
