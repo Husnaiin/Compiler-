@@ -116,14 +116,22 @@ void Lexer::scanNextToken(){
                 while (!isAtEnd() && peek() != '\n') advance();
             } else if (peek() == '*') {
                 // block comment
+                int commentStartLine = lineNumber;
+                int commentStartColumn = columnNumber; // currently at '/'; '*' is next
                 advance(); // consume '*'
+                bool foundClose = false;
                 while (!isAtEnd()) {
                     if (peek() == '*' && peek(1) == '/') {
                         advance(); // '*'
                         advance(); // '/'
+                        foundClose = true;
                         break;
                     }
                     advance();
+                }
+                if (!foundClose) {
+                    throw runtime_error("Unterminated block comment at line " + to_string(commentStartLine) +
+                                         ", column " + to_string(commentStartColumn));
                 }
             } else {
                 addToken(TokenType::T_DIVIDE);
