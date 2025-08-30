@@ -21,7 +21,7 @@ int main(int argc, char* argv[]) {
         vector<Token> tokens = lexer.tokenize();
         cout << "Tokens:\n";
         for (const auto& token : tokens) {
-            cout << token.toString() << endl;  // Show ALL tokens, not just EOF
+            cout << token.toString() << endl; 
         }
     } catch (const exception& e) {
         cerr << "Lexical error: " << e.what() << endl;

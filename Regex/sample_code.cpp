@@ -1,120 +1,129 @@
-// Complex C++ program for lexer testing
-// Includes all requested features: conditionals, loops, operators, etc.
+#include <iostream>
+#include <vector>
 #include <string>
-using namespace std;
-int calculate_sum(int a, int b) {
-    int result = a + b;
-    return result;
-}
 
-float process_data(float values[], int size) {
-    float sum = 0.0;
-    for (int i = 0; i < size; i++) {
-        sum += values[i];
+class MyClass {
+private:
+    int privateVar;
+public:
+    MyClass(int val) : privateVar(val) {}
+    
+    void display() const {
+        std::cout << "Value: " << privateVar << std::endl;
     }
-    return sum / size;
+    
+    template<typename T>
+    T process(T input) {
+        return input * 2;
+    }
+};
+
+namespace Math {
+    const double PI = 3.14159;
+    
+    double calculate_area(double radius) {
+        return PI * radius * radius;
+    }
 }
 
-void string_demo() {
-    string greeting = "Hello, \"World\"!\nThis is a test.";
-    string emoji_str = "👍 Unicode and emojis work too! 😊";
-    string tab_example = "Column1\tColumn2\tColumn3";
+int main() {
+    // Variables and types
+    int x = 42;
+    double y = 3.14;
+    char c = 'A';
+    bool flag = true;
+    std::string message = "Hello, World!";
     
-    // Test escape sequences
-    string escapes = "Newline:\nTab:\tBackslash:\\";
+    // Pointers and references
+    int* ptr = &x;
+    int& ref = x;
     
-    // Comments should be ignored by lexer
-    /* Multi-line
-       comment */
-}
-
-bool validate_input(int x, float y) {
-    // Conditional statements
-    if (x > 100 && y < 0.0) {
-        return true;
-    } else if (x == 42 || y >= 100.5) {
-        return false;
+    // Arrays and vectors
+    int arr[5] = {1, 2, 3, 4, 5};
+    std::vector<int> vec = {1, 2, 3, 4, 5};
+    
+    // Control structures
+    if (x > 0 && y < 10.0) {
+        std::cout << "Positive x" << std::endl;
+    } else if (x == 0) {
+        std::cout << "Zero x" << std::endl;
     } else {
-        return x != 0;
-    }
-}
-
-void loop_demo(int count) {
-    int i = 0;
-    
-    // While loop
-    while (i < count) {
-        i++;
+        std::cout << "Negative x" << std::endl;
     }
     
-    // Do-while loop
+    // Loops
+    for (int i = 0; i < 10; ++i) {
+        if (i == 5) continue;
+        std::cout << i << " ";
+    }
+    std::cout << std::endl;
+    
+    int j = 0;
+    while (j < 5) {
+        std::cout << j << " ";
+        j++;
+    }
+    std::cout << std::endl;
+    
     do {
-        count--;
-    } while (count > 0);
+        std::cout << j << " ";
+        j--;
+    } while (j > 0);
+    std::cout << std::endl;
     
-    // For loop with complex condition
-    for (int j = 0; j < 10 && j != 5; j += 2) {
-        if (j == 4) {
-            continue;
-        }
-        // Process j
-    }
-}
-
-void operator_demo() {
-    int a = 10;
-    int b = 3;
+    // Operators
+    int a = 10, b = 3;
+    int sum = a + b;
+    int diff = a - b;
+    int product = a * b;
+    int quotient = a / b;
+    int remainder = a % b;
     
-    // Arithmetic operators
-    int add = a + b;
-    int sub = a - b;
-    int mul = a * b;
-
-    float div = a / b;
-    int mod = a % b;
+    // Bitwise operations
+    int bit_and = a & b;
+    int bit_or = a | b;
+    int bit_xor = a ^ b;
+    int bit_not = ~a;
+    int left_shift = a << 2;
+    int right_shift = a >> 1;
     
-    // Comparison operators
-    bool eq = (a == b);
-    bool neq = (a != b);
-    bool lt = (a < b);
-    bool gt = (a > b);
-    bool le = (a <= b);
-    bool ge = (a >= b);
-    
-    // Logical operators
-    bool and_op = (a > 5 && b < 5);
-    bool or_op = (a == 10 || b == 3);
-    bool not_op = !(a == b);
-    
-    // Assignment operators
+    // Compound assignment
     a += 5;
     b *= 2;
     
-    // Bitwise operators
-    int and_bit = a & b;
-    int or_bit = a | b;
-    int xor_bit = a ^ b;
-    int not_bit = ~a;
-    int left_shift = a << 1;
-    int right_shift = a >> 1;
-}
-
-// Main function
-int main() {
-    // Test all features
-    int x = 42;
-    float y = 3.14;
-    bool flag = true;
+    // Comparison
+    bool is_equal = (a == b);
+    bool not_equal = (a != b);
+    bool less_than = (a < b);
+    bool greater_than = (a > b);
     
-    string message = "Program started";
+    // Logical operators
+    bool logical_and = (a > 0 && b > 0);
+    bool logical_or = (a == 0 || b == 0);
+    bool logical_not = !(a == b);
     
-    if (x == 42 && flag) {
-        message = "Correct value";
-    } else {
-        message = "Incorrect value";
+    // Ternary operator
+    int max_val = (a > b) ? a : b;
+    
+    // Function calls
+    MyClass obj(42);
+    obj.display();
+    
+    double area = Math::calculate_area(5.0);
+    std::cout << "Area: " << area << std::endl;
+    
+    // Exception handling
+    try {
+        if (x < 0) {
+            throw std::runtime_error("Negative value");
+        }
+    } catch (const std::exception& e) {
+        std::cerr << "Error: " << e.what() << std::endl;
     }
     
-    int result = calculate_sum(x, 10);
+    // Lambda expression
+    auto lambda = [](int n) -> int { return n * n; };
+    int squared = lambda(5);
     
-    return result;
+    return 0;
 }
