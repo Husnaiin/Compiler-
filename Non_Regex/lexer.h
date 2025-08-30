@@ -18,6 +18,7 @@ class Lexer {
     int currentIndex = 0;
     int lineNumber = 1;
     int columnNumber = 1;
+    int startColumn = 1;
 
     public:
     Lexer(const string& input, bool isFile);

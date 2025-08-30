@@ -1,0 +1,17 @@
+// Invalid identifier starting with number
+123abc = 5;
+
+// Unterminated string
+"unterminated
+
+// Unterminated char
+'x
+
+// Bad escape in string
+"bad\xescape"
+
+// Comment edge: nested block-like sequences (should be ignored within comment)
+/* start /* nested */ still comment */
+
+// Valid tail to ensure lexer recovers after errors are thrown (may not run due to throw)
+int ok = 1;

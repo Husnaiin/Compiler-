@@ -15,16 +15,18 @@ Lexer::Lexer(const string& input, bool isFile=false)
 }
 
 vector<Token> Lexer::tokenize() {
-    
+    tokens.clear();
     currentIndex = 0;
     lineNumber = 1;
     columnNumber = 1;
 
-    while(currentIndex < input.length()) {
-        switch(peek()){
-
-        }
+    while(!isAtEnd()) {
+        start = currentIndex;
+        startColumn = columnNumber;
+        scanNextToken();
     }
+
+    addToken(TokenType::T_EOF, "");
     return tokens;
 }
 
@@ -62,13 +64,13 @@ void Lexer::scanNextToken(){
             addToken(TokenType::T_DOT);
             break;
         case '"':
-            // handle String literal
+            scanString();
             break;
         case '\'':
-            // handle Char literal
+            scanChar();
             break;
         case '0':
-            // handle Number literal
+            scanNumber();
             break;
         case '1': case '2': case '3': case '4': case '5':
         case '6': case '7': case '8': case '9':
@@ -109,6 +111,20 @@ void Lexer::scanNextToken(){
             if (peek() == '=') {
                 advance();
                 addToken(TokenType::T_DIV_ASSIGN);
+            } else if (peek() == '/') {
+                // line comment
+                while (!isAtEnd() && peek() != '\n') advance();
+            } else if (peek() == '*') {
+                // block comment
+                advance(); // consume '*'
+                while (!isAtEnd()) {
+                    if (peek() == '*' && peek(1) == '/') {
+                        advance(); // '*'
+                        advance(); // '/'
+                        break;
+                    }
+                    advance();
+                }
             } else {
                 addToken(TokenType::T_DIVIDE);
             }
@@ -206,17 +222,12 @@ void Lexer::scanNextToken(){
             addToken(TokenType::T_QUESTION);
             break;
         case ' ':
-            columnNumber++;
             break;
         case '\t':
-            columnNumber += 4; 
             break;
         case '\r':
-            columnNumber++;
             break;
         case '\n':
-            lineNumber++;
-            columnNumber = 1;
             break;
         default:
             if (isDigit(currentChar)) {
@@ -232,11 +243,19 @@ void Lexer::scanNextToken(){
 
 void Lexer::scanNumber() {
     while (isDigit(peek())) advance();
-    
-    // Look for decimal point
+    bool isFloat = false;
     if (peek() == '.' && isDigit(peek(1))) {
-        advance(); // consume the '.'
+        isFloat = true;
+        advance();
         while (isDigit(peek())) advance();
+    }
+
+    // If after number we immediately have an alpha/underscore, it's invalid identifier like 123abc
+    if (isAlpha(peek())) {
+        throw runtime_error("Invalid identifier: identifiers cannot start with a number at line " + to_string(lineNumber));
+    }
+
+    if (isFloat) {
         addToken(TokenType::T_FLOAT_LITERAL);
     } else {
         addToken(TokenType::T_INT_LITERAL);
@@ -252,44 +271,70 @@ void Lexer::scanIdentifier() {
 }
 
 void Lexer::scanString() {
-    while (peek() != '"' && !isAtEnd()) {
-        if (peek() == '\n') {
-            lineNumber++;
-            columnNumber = 1;
+    // emit opening quotes token
+    addToken(TokenType::T_QUOTES, "\"");
+    start = currentIndex; // start of content
+    startColumn = columnNumber;
+    string value;
+    while (!isAtEnd()) {
+        char c = peek();
+        if (c == '"') break;
+        if (c == '\\') {
+            advance(); // consume '\\'
+            char e = peek();
+            if (isAtEnd()) break;
+            switch (e) {
+                case 'n': value.push_back('\n'); break;
+                case 't': value.push_back('\t'); break;
+                case 'r': value.push_back('\r'); break;
+                case '\\': value.push_back('\\'); break;
+                case '"': value.push_back('"'); break;
+                case '\'': value.push_back('\''); break;
+                default: value.push_back(e); break;
+            }
+            advance();
+            continue;
         }
+        value.push_back(c);
         advance();
     }
-    
-    if (isAtEnd()) {
-        addToken(TokenType::T_ERROR);
-        return;
-    }
-    
-    advance(); // closing "
-    string value = input.substr(start + 1, currentIndex - start - 2);
+    if (isAtEnd()) { throw runtime_error("Unterminated string literal at line " + to_string(lineNumber)); }
+    advance(); // consume closing '"'
     addToken(TokenType::T_STRING_LITERAL, value);
+    // emit closing quotes token
+    addToken(TokenType::T_QUOTES, "\"");
 }
 
 void Lexer::scanChar() {
-    if (peek() == '\'' || isAtEnd()) {
-        addToken(TokenType::T_ERROR);
-        return;
+    // opening quote already consumed in caller
+    char c;
+    if (isAtEnd()) throw runtime_error("Unterminated char literal at line " + to_string(lineNumber));
+    if (peek() == '\\') {
+        advance();
+        if (isAtEnd()) throw runtime_error("Unterminated char escape at line " + to_string(lineNumber));
+        char e = peek();
+        switch (e) {
+            case 'n': c = '\n'; break;
+            case 't': c = '\t'; break;
+            case 'r': c = '\r'; break;
+            case '\\': c = '\\'; break;
+            case '\'': c = '\''; break;
+            case '"': c = '"'; break;
+            default: c = e; break;
+        }
+        advance();
+    } else {
+        c = peek();
+        advance();
     }
-    
-    advance(); // consume the character
-    
-    if (peek() != '\'') {
-        addToken(TokenType::T_ERROR);
-        return;
-    }
-    
-    advance(); // closing '
-    string value = input.substr(start + 1, currentIndex - start - 2);
+    if (peek() != '\'') throw runtime_error("Unterminated char literal at line " + to_string(lineNumber));
+    advance(); // consume closing quote
+    string value(1, c);
     addToken(TokenType::T_CHAR_LITERAL, value);
 }
 
 TokenType Lexer::getKeywordType(const string& text) {
-    if (text == "function") return TokenType::T_FUNCTION;
+    if (text == "function" || text == "fn") return TokenType::T_FUNCTION;
     if (text == "int") return TokenType::T_INT;
     if (text == "float") return TokenType::T_FLOAT;
     if (text == "string") return TokenType::T_STRING;
@@ -321,12 +366,12 @@ TokenType Lexer::getKeywordType(const string& text) {
 
 bool Lexer::addToken(TokenType type){
     string lexeme = input.substr(start, currentIndex - start); 
-    tokens.push_back(Token(type, lexeme, lineNumber, columnNumber-lexeme.length()));
+    tokens.push_back(Token(type, lexeme, lineNumber, startColumn));
     return true;
 }
 
 bool Lexer::addToken(TokenType type, const string& lexeme){
-    tokens.push_back(Token(type, lexeme, lineNumber, columnNumber-lexeme.length()));
+    tokens.push_back(Token(type, lexeme, lineNumber, startColumn));
     return true;
 }
 
@@ -344,7 +389,16 @@ char Lexer::peek(int offset) const {
 
 char Lexer::advance(){
     if(isAtEnd()) return '\0';
-    return input[currentIndex++];   
+    char c = input[currentIndex++];
+    if(c == '\n'){
+        lineNumber++;
+        columnNumber = 1;
+    } else if (c == '\t') {
+        columnNumber += 4;
+    } else {
+        columnNumber++;
+    }
+    return c;   
 }
 
 bool Lexer::isAtEnd() const{

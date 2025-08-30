@@ -71,6 +71,7 @@ class Token {
     Token(TokenType type, const string& value, int line, int column);
     string toString() const;
     void print() const;
+    TokenType getType() const { return type; }
 };
 
 #endif
