@@ -3,8 +3,9 @@
 #include <map>
 using namespace std;
 
+// A comprehensive map of token types to their string representations.
 static const map<TokenType, string> tokenTypeStrings = {
-    // Keywords
+    // Keywords (C/C++98/03)
     {TokenType::T_AUTO, "T_AUTO"},
     {TokenType::T_BREAK, "T_BREAK"},
     {TokenType::T_CASE, "T_CASE"},
@@ -56,7 +57,8 @@ static const map<TokenType, string> tokenTypeStrings = {
     {TokenType::T_USING, "T_USING"},
     {TokenType::T_ASM, "T_ASM"},
     {TokenType::T_BOOL, "T_BOOL"},
-    {TokenType::T_WCHAR_T, "T_WCHAR_T"},
+    {TokenType::T_TRUE, "T_TRUE"},
+    {TokenType::T_FALSE, "T_FALSE"},
     {TokenType::T_TYPEID, "T_TYPEID"},
     {TokenType::T_DYNAMIC_CAST, "T_DYNAMIC_CAST"},
     {TokenType::T_STATIC_CAST, "T_STATIC_CAST"},
@@ -64,9 +66,22 @@ static const map<TokenType, string> tokenTypeStrings = {
     {TokenType::T_CONST_CAST, "T_CONST_CAST"},
     {TokenType::T_EXPLICIT, "T_EXPLICIT"},
     {TokenType::T_MUTABLE, "T_MUTABLE"},
-    {TokenType::T_TRUE, "T_TRUE"},
-    {TokenType::T_FALSE, "T_FALSE"},
+
+    // Modern C++ Keywords (C++11 and newer)
     {TokenType::T_NULLPTR, "T_NULLPTR"},
+    {TokenType::T_CONSTEXPR, "T_CONSTEXPR"},
+    {TokenType::T_NOEXCEPT, "T_NOEXCEPT"},
+    {TokenType::T_DECLTYPE, "T_DECLTYPE"},
+    {TokenType::T_STATIC_ASSERT, "T_STATIC_ASSERT"},
+    {TokenType::T_CHAR16_T, "T_CHAR16_T"},
+    {TokenType::T_CHAR32_T, "T_CHAR32_T"},
+    {TokenType::T_ALIGNAS, "T_ALIGNAS"},
+    {TokenType::T_ALIGNOF, "T_ALIGNOF"},
+    {TokenType::T_CO_AWAIT, "T_CO_AWAIT"},
+    {TokenType::T_CO_YIELD, "T_CO_YIELD"},
+    {TokenType::T_CO_RETURN, "T_CO_RETURN"},
+    {TokenType::T_CONCEPT, "T_CONCEPT"},
+    {TokenType::T_REQUIRES, "T_REQUIRES"},
     
     // Literals
     {TokenType::T_IDENTIFIER, "T_IDENTIFIER"},
@@ -79,7 +94,7 @@ static const map<TokenType, string> tokenTypeStrings = {
     // Operators
     {TokenType::T_PLUS, "T_PLUS"},
     {TokenType::T_MINUS, "T_MINUS"},
-    {TokenType::T_MULTIPLY, "T_MULTIPLY"},
+    {TokenType::T_ASTERISK, "T_ASTERISK"},
     {TokenType::T_DIVIDE, "T_DIVIDE"},
     {TokenType::T_MOD, "T_MOD"},
     {TokenType::T_INCREMENT, "T_INCREMENT"},
@@ -99,7 +114,7 @@ static const map<TokenType, string> tokenTypeStrings = {
     {TokenType::T_LOGICAL_AND, "T_LOGICAL_AND"},
     {TokenType::T_LOGICAL_OR, "T_LOGICAL_OR"},
     {TokenType::T_LOGICAL_NOT, "T_LOGICAL_NOT"},
-    {TokenType::T_BITWISE_AND, "T_BITWISE_AND"},
+    {TokenType::T_AMPERSAND, "T_AMPERSAND"},
     {TokenType::T_BITWISE_OR, "T_BITWISE_OR"},
     {TokenType::T_BITWISE_XOR, "T_BITWISE_XOR"},
     {TokenType::T_BITWISE_NOT, "T_BITWISE_NOT"},
@@ -111,12 +126,10 @@ static const map<TokenType, string> tokenTypeStrings = {
     {TokenType::T_BITWISE_OR_ASSIGN, "T_BITWISE_OR_ASSIGN"},
     {TokenType::T_BITWISE_XOR_ASSIGN, "T_BITWISE_XOR_ASSIGN"},
     {TokenType::T_ARROW, "T_ARROW"},
-    {TokenType::T_DOT, "T_DOT"},
     {TokenType::T_SCOPE, "T_SCOPE"},
-    {TokenType::T_DEREFERENCE, "T_DEREFERENCE"},
-    {TokenType::T_ADDRESS_OF, "T_ADDRESS_OF"},
-    {TokenType::T_SIZEOF, "T_SIZEOF"},
-    {TokenType::T_TERNARY, "T_TERNARY"},
+    {TokenType::T_ARROW_ASTERISK, "T_ARROW_ASTERISK"},
+    {TokenType::T_DOT_ASTERISK, "T_DOT_ASTERISK"},
+    {TokenType::T_SPACESHIP, "T_SPACESHIP"},
     
     // Punctuators
     {TokenType::T_SEMICOLON, "T_SEMICOLON"},
@@ -130,8 +143,7 @@ static const map<TokenType, string> tokenTypeStrings = {
     {TokenType::T_RBRACE, "T_RBRACE"},
     {TokenType::T_LBRACKET, "T_LBRACKET"},
     {TokenType::T_RBRACKET, "T_RBRACKET"},
-    {TokenType::T_LANGBRACKET, "T_LANGBRACKET"},
-    {TokenType::T_RANGBRACKET, "T_RANGBRACKET"},
+    {TokenType::T_ELLIPSIS, "T_ELLIPSIS"},
     
     // Special
     {TokenType::T_EOF, "T_EOF"},
@@ -149,11 +161,11 @@ string Token::toString() const {
     if (it != tokenTypeStrings.end()) {
         oss << "[" << it->second;
         if (!value.empty() && (type == TokenType::T_IDENTIFIER || 
-                              type == TokenType::T_INTLIT ||
-                              type == TokenType::T_FLOATLIT ||
-                              type == TokenType::T_CHARLIT ||
-                              type == TokenType::T_STRINGLIT ||
-                              type == TokenType::T_BOOLLIT)) {
+                               type == TokenType::T_INTLIT ||
+                               type == TokenType::T_FLOATLIT ||
+                               type == TokenType::T_CHARLIT ||
+                               type == TokenType::T_STRINGLIT ||
+                               type == TokenType::T_BOOLLIT)) {
             oss << "(\"" << value << "\")";
         }
         oss << "]";
