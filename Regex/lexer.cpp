@@ -2,7 +2,7 @@
 #include <cctype>
 #include <stdexcept>
 #include <sstream>
-
+#include <map>
 using namespace std;
 
 Lexer::Lexer(const string& src) : input(src), pos(0), line(1), column(1) {
@@ -28,10 +28,7 @@ char Lexer::peek() {
 }
 
 void Lexer::initTokenPatterns() {
-    // This function remains unchanged from your original implementation.
-    // It sets up all the regex patterns for keywords, operators, and literals.
-    
-    // Keywords
+    // Keywords (C/C++98/03) - isKeyword flag set to true
     tokenPatterns.emplace_back("\\bauto\\b", TokenType::T_AUTO, true);
     tokenPatterns.emplace_back("\\bbreak\\b", TokenType::T_BREAK, true);
     tokenPatterns.emplace_back("\\bcase\\b", TokenType::T_CASE, true);
@@ -95,6 +92,10 @@ void Lexer::initTokenPatterns() {
     tokenPatterns.emplace_back("\\bfalse\\b", TokenType::T_FALSE, true);
     tokenPatterns.emplace_back("\\bnullptr\\b", TokenType::T_NULLPTR, true);
     
+    // Additional keywords for test cases
+    tokenPatterns.emplace_back("\\bfn\\b", TokenType::T_FN, true);
+    tokenPatterns.emplace_back("\\bstring\\b", TokenType::T_STRING, true);
+    
     // Operators - Multi-character first for correct matching
     tokenPatterns.emplace_back("<<=", TokenType::T_LEFT_SHIFT_ASSIGN);
     tokenPatterns.emplace_back(">>=", TokenType::T_RIGHT_SHIFT_ASSIGN);
@@ -122,14 +123,14 @@ void Lexer::initTokenPatterns() {
     // Single character operators
     tokenPatterns.emplace_back("\\+", TokenType::T_PLUS);
     tokenPatterns.emplace_back("-", TokenType::T_MINUS);
-    tokenPatterns.emplace_back("\\*", TokenType::T_MULTIPLY);
+    tokenPatterns.emplace_back("\\*", TokenType::T_ASTERISK);
     tokenPatterns.emplace_back("/", TokenType::T_DIVIDE);
     tokenPatterns.emplace_back("%", TokenType::T_MOD);
     tokenPatterns.emplace_back("=", TokenType::T_ASSIGN);
     tokenPatterns.emplace_back("<", TokenType::T_LESS);
     tokenPatterns.emplace_back(">", TokenType::T_GREATER);
     tokenPatterns.emplace_back("!", TokenType::T_LOGICAL_NOT);
-    tokenPatterns.emplace_back("&", TokenType::T_BITWISE_AND);
+    tokenPatterns.emplace_back("&", TokenType::T_AMPERSAND);
     tokenPatterns.emplace_back("\\|", TokenType::T_BITWISE_OR);
     tokenPatterns.emplace_back("\\^", TokenType::T_BITWISE_XOR);
     tokenPatterns.emplace_back("~", TokenType::T_BITWISE_NOT);
@@ -157,7 +158,6 @@ void Lexer::initTokenPatterns() {
     // Identifiers
     tokenPatterns.emplace_back("[a-zA-Z_][a-zA-Z0-9_]*", TokenType::T_IDENTIFIER);
 }
-
 
 vector<Token> Lexer::tokenize() {
     vector<Token> tokens;
@@ -211,15 +211,33 @@ vector<Token> Lexer::tokenize() {
                     if (currentChar == '\0' || currentChar == '\n') break; // Unterminated escape
                     
                     switch (currentChar) {
-                        case 'n': value += '\n'; break;
-                        case 't': value += '\t'; break;
-                        case 'r': value += '\r'; break;
-                        case '"': value += '"'; break;
-                        case '\'': value += '\''; break;
-                        case '\\': value += '\\'; break;
+                        case 'n': value += "\\n"; break;
+                        case 't': value += "\\t"; break;
+                        case 'r': value += "\\r"; break;
+                        case '"': value += "\\\""; break;
+                        case '\'': value += "\\'"; break;
+                        case '\\': value += "\\\\"; break;
+                        case '0': value += "\\0"; break;
+                        case 'a': value += "\\a"; break;
+                        case 'b': value += "\\b"; break;
+                        case 'f': value += "\\f"; break;
+                        case 'v': value += "\\v"; break;
+                        case 'x': // Hex escape sequences
+                            if (peek() != '\0' && isxdigit(peek())) {
+                                value += "\\x";
+                                advance();
+                                value += currentChar;
+                                if (peek() != '\0' && isxdigit(peek())) {
+                                    advance();
+                                    value += currentChar;
+                                }
+                            } else {
+                                value += "\\x";
+                            }
+                            break;
                         default:
-                            tokens.push_back(Token(TokenType::T_ERROR, "Bad escape sequence in string: \\" + string(1, currentChar), line, column));
-                            value += currentChar; // Add char literally and continue
+                            value += '\\';
+                            value += currentChar;
                             break;
                     }
                 } else {
@@ -245,11 +263,39 @@ vector<Token> Lexer::tokenize() {
             if (currentChar == '\\') { // Escape sequence
                 advance(); // Consume '\'
                 if(currentChar != '\0' && currentChar != '\n') {
-                    value += currentChar;
+                    switch (currentChar) {
+                        case 'n': value = "\\n"; break;
+                        case 't': value = "\\t"; break;
+                        case 'r': value = "\\r"; break;
+                        case '\\': value = "\\\\"; break;
+                        case '\'': value = "\\'"; break;
+                        case '0': value = "\\0"; break;
+                        case 'a': value = "\\a"; break;
+                        case 'b': value = "\\b"; break;
+                        case 'f': value = "\\f"; break;
+                        case 'v': value = "\\v"; break;
+                        case 'x': // Hex escape sequences
+                            if (peek() != '\0' && isxdigit(peek())) {
+                                value = "\\x";
+                                advance();
+                                value += currentChar;
+                                if (peek() != '\0' && isxdigit(peek())) {
+                                    advance();
+                                    value += currentChar;
+                                }
+                            } else {
+                                value = "\\x";
+                            }
+                            break;
+                        default:
+                            value = "\\";
+                            value += currentChar;
+                            break;
+                    }
                     advance();
                 }
             } else if (currentChar != '\0' && currentChar != '\'' && currentChar != '\n') {
-                value += currentChar;
+                value = string(1, currentChar);
                 advance();
             }
 
