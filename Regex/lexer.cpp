@@ -348,4 +348,5 @@ vector<Token> Lexer::tokenize() {
     }
     tokens.push_back(Token(TokenType::T_EOF, "", line, column));
     return tokens;
+    
 }
