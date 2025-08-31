@@ -87,6 +87,6 @@ string Token::toString() const {
     } else {
         oss << "UNKNOWN";
     }
-    oss << " [" << line << ":" << column << "]";
+    //oss << " [" << line << ":" << column << "]";
     return oss.str();
 }
