@@ -53,7 +53,7 @@ void Lexer::initTokenPatterns() {
     tokenPatterns.emplace_back("\\bsigned\\b", TokenType::T_SIGNED, true);
     tokenPatterns.emplace_back("\\bsizeof\\b", TokenType::T_SIZEOF, true);
     tokenPatterns.emplace_back("\\bstatic\\b", TokenType::T_STATIC, true);
-    tokenPatterns.emplace_back("\\bstruct\\b", TokenType::T_STRUCT, true);
+    tokenPatterns.emplace_back("\\bstruct\\b", TokenType::T_STATIC, true);
     tokenPatterns.emplace_back("\\bswitch\\b", TokenType::T_SWITCH, true);
     tokenPatterns.emplace_back("\\btypedef\\b", TokenType::T_TYPEDEF, true);
     tokenPatterns.emplace_back("\\bunion\\b", TokenType::T_UNION, true);
@@ -95,6 +95,12 @@ void Lexer::initTokenPatterns() {
     // Additional keywords for test cases
     tokenPatterns.emplace_back("\\bfn\\b", TokenType::T_FN, true);
     tokenPatterns.emplace_back("\\bstring\\b", TokenType::T_STRING, true);
+    tokenPatterns.emplace_back("\\bwapsi\\b", TokenType::T_RETURN, true);
+    tokenPatterns.emplace_back("\\bduhrao\\b", TokenType::T_FOR, true);
+    tokenPatterns.emplace_back("\\bagar\\b", TokenType::T_IF, true);
+    tokenPatterns.emplace_back("\\btoro\\b", TokenType::T_BREAK, true);
+    tokenPatterns.emplace_back("\\bwarna\\b", TokenType::T_ELSE, true);
+    tokenPatterns.emplace_back("\\bginti\\b", TokenType::T_INT, true);
     
     // Operators - Multi-character first for correct matching
     tokenPatterns.emplace_back("<<=", TokenType::T_LEFT_SHIFT_ASSIGN);
