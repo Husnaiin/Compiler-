@@ -32,18 +32,22 @@ class Parser {
 private:
     std::vector<Token> tokens;
     size_t current;
+
+    // Error handling
+    ParseError errorAtCurrent(const std::string& message);
+    ParseError errorAtToken(Token token, const std::string& message);
+
     std::vector<ParseError> errors;
 
+    // Add these declarations:
     Token advance();
     Token peek() const;
     Token previous() const;
     bool check(TokenType type) const;
     bool match(TokenType type);
     bool isAtEnd() const;
-    
     Token consume(TokenType type, const std::string& errorMessage);
-    ParseError errorAtCurrent(const std::string& message);
-    ParseError errorAtToken(Token token, const std::string& message);
+    void synchronize(); // <-- This fixes your main error
 
     // Pratt parsing functions
     ExprPtr parseExpression(int precedence = 0);
@@ -53,18 +57,19 @@ private:
     // Declaration parsing
     DeclPtr parseDeclaration();
     std::unique_ptr<FnDecl> parseFunctionDeclaration();
-    std::unique_ptr<VarDecl> parseVariableDeclaration();
+    std::unique_ptr<VarDecl> parseVariableDeclaration(); // Add this
 
     // Statement parsing
     StmtPtr parseStatement();
-    StmtPtr parseExpressionStatement();
-    StmtPtr parseReturnStatement();
     StmtPtr parseIfStatement();
     StmtPtr parseForStatement();
-    StmtPtr parseBlockStatement();
+    StmtPtr parseBreakStatement(); // Add this line
+    StmtPtr parseReturnStatement();
+    StmtPtr parseExprStatement();
+    StmtPtr parseBlock(); // Add this
 
     // Helper functions
-    std::vector<VarDecl> parseParameterList();
+    vector<VarDecl> parseParameterList();
     std::vector<ExprPtr> parseArgumentList();
 
 public:

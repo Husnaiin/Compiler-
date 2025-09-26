@@ -132,13 +132,19 @@ struct BreakStmt : Stmt {
     std::string toString(int indent = 0) const override;
 };
 
+struct BlockStmt : Stmt {
+    std::vector<StmtPtr> statements;
+    BlockStmt(std::vector<StmtPtr> s);
+    std::string toString(int indent = 0) const override;
+};
+
 // Declaration types
 struct Decl {
     virtual ~Decl() = default;
     virtual std::string toString(int indent = 0) const = 0;
 };
 
-struct VarDecl : Decl {
+struct VarDecl : Decl, Stmt { // <-- Inherit from Stmt as well
     TokenType type;
     std::string name;
     ExprPtr init;

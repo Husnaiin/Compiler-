@@ -14,7 +14,7 @@ void Lexer::advance() {
     if (pos < input.length()) {
         if (currentChar == '\n') {
             line++;
-            column = 1; // Reset column to 1 on new line
+            column = 1;
         } else {
             column++;
         }
@@ -28,7 +28,7 @@ char Lexer::peek() {
 }
 
 void Lexer::initTokenPatterns() {
-    // Keywords (C/C++98/03) - isKeyword flag set to true
+    // Standard C++ keywords
     tokenPatterns.emplace_back("\\bauto\\b", TokenType::T_AUTO, true);
     tokenPatterns.emplace_back("\\bbreak\\b", TokenType::T_BREAK, true);
     tokenPatterns.emplace_back("\\bcase\\b", TokenType::T_CASE, true);
@@ -53,7 +53,7 @@ void Lexer::initTokenPatterns() {
     tokenPatterns.emplace_back("\\bsigned\\b", TokenType::T_SIGNED, true);
     tokenPatterns.emplace_back("\\bsizeof\\b", TokenType::T_SIZEOF, true);
     tokenPatterns.emplace_back("\\bstatic\\b", TokenType::T_STATIC, true);
-    tokenPatterns.emplace_back("\\bstruct\\b", TokenType::T_STATIC, true);
+    tokenPatterns.emplace_back("\\bstruct\\b", TokenType::T_STRUCT, true);
     tokenPatterns.emplace_back("\\bswitch\\b", TokenType::T_SWITCH, true);
     tokenPatterns.emplace_back("\\btypedef\\b", TokenType::T_TYPEDEF, true);
     tokenPatterns.emplace_back("\\bunion\\b", TokenType::T_UNION, true);
@@ -61,38 +61,8 @@ void Lexer::initTokenPatterns() {
     tokenPatterns.emplace_back("\\bvoid\\b", TokenType::T_VOID, true);
     tokenPatterns.emplace_back("\\bvolatile\\b", TokenType::T_VOLATILE, true);
     tokenPatterns.emplace_back("\\bwhile\\b", TokenType::T_WHILE, true);
-    tokenPatterns.emplace_back("\\bclass\\b", TokenType::T_CLASS, true);
-    tokenPatterns.emplace_back("\\bpublic\\b", TokenType::T_PUBLIC, true);
-    tokenPatterns.emplace_back("\\bprivate\\b", TokenType::T_PRIVATE, true);
-    tokenPatterns.emplace_back("\\bprotected\\b", TokenType::T_PROTECTED, true);
-    tokenPatterns.emplace_back("\\btemplate\\b", TokenType::T_TEMPLATE, true);
-    tokenPatterns.emplace_back("\\bthis\\b", TokenType::T_THIS, true);
-    tokenPatterns.emplace_back("\\bvirtual\\b", TokenType::T_VIRTUAL, true);
-    tokenPatterns.emplace_back("\\bnew\\b", TokenType::T_NEW, true);
-    tokenPatterns.emplace_back("\\bdelete\\b", TokenType::T_DELETE, true);
-    tokenPatterns.emplace_back("\\btry\\b", TokenType::T_TRY, true);
-    tokenPatterns.emplace_back("\\bcatch\\b", TokenType::T_CATCH, true);
-    tokenPatterns.emplace_back("\\bthrow\\b", TokenType::T_THROW, true);
-    tokenPatterns.emplace_back("\\boperator\\b", TokenType::T_OPERATOR, true);
-    tokenPatterns.emplace_back("\\bfriend\\b", TokenType::T_FRIEND, true);
-    tokenPatterns.emplace_back("\\binline\\b", TokenType::T_INLINE, true);
-    tokenPatterns.emplace_back("\\bnamespace\\b", TokenType::T_NAMESPACE, true);
-    tokenPatterns.emplace_back("\\busing\\b", TokenType::T_USING, true);
-    tokenPatterns.emplace_back("\\basm\\b", TokenType::T_ASM, true);
-    tokenPatterns.emplace_back("\\bbool\\b", TokenType::T_BOOL, true);
-    tokenPatterns.emplace_back("\\bwchar_t\\b", TokenType::T_WCHAR_T, true);
-    tokenPatterns.emplace_back("\\btypeid\\b", TokenType::T_TYPEID, true);
-    tokenPatterns.emplace_back("\\bdynamic_cast\\b", TokenType::T_DYNAMIC_CAST, true);
-    tokenPatterns.emplace_back("\\bstatic_cast\\b", TokenType::T_STATIC_CAST, true);
-    tokenPatterns.emplace_back("\\breinterpret_cast\\b", TokenType::T_REINTERPRET_CAST, true);
-    tokenPatterns.emplace_back("\\bconst_cast\\b", TokenType::T_CONST_CAST, true);
-    tokenPatterns.emplace_back("\\bexplicit\\b", TokenType::T_EXPLICIT, true);
-    tokenPatterns.emplace_back("\\bmutable\\b", TokenType::T_MUTABLE, true);
-    tokenPatterns.emplace_back("\\btrue\\b", TokenType::T_TRUE, true);
-    tokenPatterns.emplace_back("\\bfalse\\b", TokenType::T_FALSE, true);
-    tokenPatterns.emplace_back("\\bnullptr\\b", TokenType::T_NULLPTR, true);
-    
-    // Additional keywords for test cases
+
+    // Custom language keywords - CORRECTED MAPPINGS
     tokenPatterns.emplace_back("\\bfn\\b", TokenType::T_FN, true);
     tokenPatterns.emplace_back("\\bstring\\b", TokenType::T_STRING, true);
     tokenPatterns.emplace_back("\\bwapsi\\b", TokenType::T_RETURN, true);
@@ -101,8 +71,8 @@ void Lexer::initTokenPatterns() {
     tokenPatterns.emplace_back("\\btoro\\b", TokenType::T_BREAK, true);
     tokenPatterns.emplace_back("\\bwarna\\b", TokenType::T_ELSE, true);
     tokenPatterns.emplace_back("\\bginti\\b", TokenType::T_INT, true);
-    
-    // Operators - Multi-character first for correct matching
+
+    // Operators - Multi-character first
     tokenPatterns.emplace_back("<<=", TokenType::T_LEFT_SHIFT_ASSIGN);
     tokenPatterns.emplace_back(">>=", TokenType::T_RIGHT_SHIFT_ASSIGN);
     tokenPatterns.emplace_back("\\+=", TokenType::T_PLUS_ASSIGN);
@@ -155,11 +125,11 @@ void Lexer::initTokenPatterns() {
     tokenPatterns.emplace_back("\\}", TokenType::T_RBRACE);
     
     // Literals
-    tokenPatterns.emplace_back("0[xX][0-9a-fA-F]+", TokenType::T_INTLIT); // Hex
-    tokenPatterns.emplace_back("0[0-7]+", TokenType::T_INTLIT);          // Octal
+    tokenPatterns.emplace_back("0[xX][0-9a-fA-F]+", TokenType::T_INTLIT);
+    tokenPatterns.emplace_back("0[0-7]+", TokenType::T_INTLIT);
     tokenPatterns.emplace_back("[0-9]+\\.[0-9]+([eE][+-]?[0-9]+)?", TokenType::T_FLOATLIT);
     tokenPatterns.emplace_back("[0-9]+[eE][+-]?[0-9]+", TokenType::T_FLOATLIT);
-    tokenPatterns.emplace_back("[0-9]+", TokenType::T_INTLIT);           // Decimal
+    tokenPatterns.emplace_back("[0-9]+", TokenType::T_INTLIT);
 
     // Identifiers
     tokenPatterns.emplace_back("[a-zA-Z_][a-zA-Z0-9_]*", TokenType::T_IDENTIFIER);
@@ -179,29 +149,24 @@ vector<Token> Lexer::tokenize() {
 
         // Comments
         if (currentChar == '/') {
-            if (peek() == '/') { // Single-line comment
+            if (peek() == '/') {
                 while (currentChar != '\0' && currentChar != '\n') {
                     advance();
                 }
                 continue;
             }
-            if (peek() == '*') { // Block comment
-                advance(); // Consume '/'
-                advance(); // Consume '*'
-
+            if (peek() == '*') {
+                advance();
+                advance();
                 while (currentChar != '\0') {
-                    if (currentChar == '*' && peek() == '/') {
-                        break;
-                    }
+                    if (currentChar == '*' && peek() == '/') break;
                     advance();
                 }
-                
-                // If loop finished because of EOF, it's an unterminated comment
                 if (currentChar == '\0') {
                     tokens.push_back(Token(TokenType::T_ERROR, "Unterminated block comment", startLine, startColumn));
                 } else {
-                    advance(); // Consume '*'
-                    advance(); // Consume '/'
+                    advance();
+                    advance();
                 }
                 continue;
             }
@@ -210,51 +175,27 @@ vector<Token> Lexer::tokenize() {
         // String Literals
         if (currentChar == '"') {
             string value;
-            advance(); // Consume opening '"'
+            advance();
             while (currentChar != '\0' && currentChar != '"' && currentChar != '\n') {
                 if (currentChar == '\\') {
-                    advance(); // Consume '\'
-                    if (currentChar == '\0' || currentChar == '\n') break; // Unterminated escape
-                    
+                    advance();
+                    if (currentChar == '\0' || currentChar == '\n') break;
                     switch (currentChar) {
-                        case 'n': value += "\\n"; break;
-                        case 't': value += "\\t"; break;
-                        case 'r': value += "\\r"; break;
-                        case '"': value += "\\\""; break;
-                        case '\'': value += "\\'"; break;
-                        case '\\': value += "\\\\"; break;
-                        case '0': value += "\\0"; break;
-                        case 'a': value += "\\a"; break;
-                        case 'b': value += "\\b"; break;
-                        case 'f': value += "\\f"; break;
-                        case 'v': value += "\\v"; break;
-                        case 'x': // Hex escape sequences
-                            if (peek() != '\0' && isxdigit(peek())) {
-                                value += "\\x";
-                                advance();
-                                value += currentChar;
-                                if (peek() != '\0' && isxdigit(peek())) {
-                                    advance();
-                                    value += currentChar;
-                                }
-                            } else {
-                                value += "\\x";
-                            }
-                            break;
-                        default:
-                            value += '\\';
-                            value += currentChar;
-                            break;
+                        case 'n': value += '\n'; break;
+                        case 't': value += '\t'; break;
+                        case 'r': value += '\r'; break;
+                        case '"': value += '"'; break;
+                        case '\\': value += '\\'; break;
+                        default: value += currentChar; break;
                     }
                 } else {
                     value += currentChar;
                 }
                 advance();
             }
-
             if (currentChar == '"') {
                 tokens.push_back(Token(TokenType::T_STRINGLIT, value, startLine, startColumn));
-                advance(); // Consume closing '"'
+                advance();
             } else {
                 tokens.push_back(Token(TokenType::T_ERROR, "Unterminated string literal", startLine, startColumn));
             }
@@ -264,39 +205,17 @@ vector<Token> Lexer::tokenize() {
         // Character Literals
         if (currentChar == '\'') {
             string value;
-            advance(); // Consume opening '''
-            
-            if (currentChar == '\\') { // Escape sequence
-                advance(); // Consume '\'
+            advance();
+            if (currentChar == '\\') {
+                advance();
                 if(currentChar != '\0' && currentChar != '\n') {
                     switch (currentChar) {
-                        case 'n': value = "\\n"; break;
-                        case 't': value = "\\t"; break;
-                        case 'r': value = "\\r"; break;
-                        case '\\': value = "\\\\"; break;
-                        case '\'': value = "\\'"; break;
-                        case '0': value = "\\0"; break;
-                        case 'a': value = "\\a"; break;
-                        case 'b': value = "\\b"; break;
-                        case 'f': value = "\\f"; break;
-                        case 'v': value = "\\v"; break;
-                        case 'x': // Hex escape sequences
-                            if (peek() != '\0' && isxdigit(peek())) {
-                                value = "\\x";
-                                advance();
-                                value += currentChar;
-                                if (peek() != '\0' && isxdigit(peek())) {
-                                    advance();
-                                    value += currentChar;
-                                }
-                            } else {
-                                value = "\\x";
-                            }
-                            break;
-                        default:
-                            value = "\\";
-                            value += currentChar;
-                            break;
+                        case 'n': value = "\n"; break;
+                        case 't': value = "\t"; break;
+                        case 'r': value = "\r"; break;
+                        case '\\': value = "\\"; break;
+                        case '\'': value = "'"; break;
+                        default: value = string(1, currentChar); break;
                     }
                     advance();
                 }
@@ -304,39 +223,29 @@ vector<Token> Lexer::tokenize() {
                 value = string(1, currentChar);
                 advance();
             }
-
             if (currentChar == '\'') {
                 tokens.push_back(Token(TokenType::T_CHARLIT, value, startLine, startColumn));
-                advance(); // Consume closing '''
+                advance();
             } else {
                 tokens.push_back(Token(TokenType::T_ERROR, "Unterminated character literal", startLine, startColumn));
             }
             continue;
         }
 
-        // Special check for invalid identifiers like "123abc"
+        // Match against patterns
         string remaining = input.substr(pos);
-        smatch invalid_ident_match;
-        regex invalid_ident_regex("^([0-9]+[a-zA-Z_][a-zA-Z0-9_]*)");
-        if (regex_search(remaining, invalid_ident_match, invalid_ident_regex)) {
-            string matchedStr = invalid_ident_match.str(1);
-            tokens.push_back(Token(TokenType::T_ERROR, "Invalid identifier: " + matchedStr, startLine, startColumn));
-            for(size_t i = 0; i < matchedStr.length(); ++i) advance();
-            continue;
-        }
-
-        // Match against other patterns (operators, keywords, valid identifiers, etc.)
         bool matched = false;
+        
         for (const auto& pattern : tokenPatterns) {
             smatch match;
             if (regex_search(remaining, match, pattern.pattern, regex_constants::match_continuous)) {
                 string matchedStr = match.str(0);
 
-                // Handle keyword ambiguity (e.g., "int" vs "integer")
+                // Handle keyword ambiguity
                 if (pattern.isKeyword) {
                     size_t nextPos = pos + matchedStr.length();
                     if (nextPos < input.length() && (isalnum(input[nextPos]) || input[nextPos] == '_')) {
-                        continue; // It's a prefix of a longer identifier, so skip this keyword match
+                        continue;
                     }
                 }
 
@@ -350,8 +259,17 @@ vector<Token> Lexer::tokenize() {
         }
 
         if (!matched) {
-            tokens.push_back(Token(TokenType::T_ERROR, "Unknown character: '" + string(1, currentChar) + "'", line, column));
-            advance();
+            // Check for invalid identifiers starting with numbers
+            regex invalid_ident_regex("^([0-9]+[a-zA-Z_][a-zA-Z0-9_]*)");
+            smatch invalid_ident_match;
+            if (regex_search(remaining, invalid_ident_match, invalid_ident_regex)) {
+                string matchedStr = invalid_ident_match.str(1);
+                tokens.push_back(Token(TokenType::T_ERROR, "Invalid identifier: " + matchedStr, startLine, startColumn));
+                for(size_t i = 0; i < matchedStr.length(); ++i) advance();
+            } else {
+                tokens.push_back(Token(TokenType::T_ERROR, "Unknown character: '" + string(1, currentChar) + "'", line, column));
+                advance();
+            }
         }
     }
     tokens.push_back(Token(TokenType::T_EOF, "", line, column));

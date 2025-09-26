@@ -52,44 +52,33 @@ ParseError Parser::errorAtToken(Token token, const string& message) {
     return error;
 }
 
-// Pratt parser implementation
 int Parser::getPrecedence(TokenType type) const {
     static const map<TokenType, int> precedence = {
         {TokenType::T_ASSIGN, 10},
-        {TokenType::T_PLUS_ASSIGN, 10},
-        {TokenType::T_MINUS_ASSIGN, 10},
-        {TokenType::T_MULTIPLY_ASSIGN, 10},
-        {TokenType::T_DIVIDE_ASSIGN, 10},
-        {TokenType::T_MOD_ASSIGN, 10},
         {TokenType::T_LOGICAL_OR, 20},
         {TokenType::T_LOGICAL_AND, 30},
-        {TokenType::T_EQUAL, 40},
-        {TokenType::T_NOT_EQUAL, 40},
-        {TokenType::T_LESS, 50},
-        {TokenType::T_LESS_EQUAL, 50},
-        {TokenType::T_GREATER, 50},
-        {TokenType::T_GREATER_EQUAL, 50},
-        {TokenType::T_PLUS, 60},
-        {TokenType::T_MINUS, 60},
-        {TokenType::T_ASTERISK, 70},
-        {TokenType::T_DIVIDE, 70},
-        {TokenType::T_MOD, 70},
+        {TokenType::T_EQUAL, 40}, {TokenType::T_NOT_EQUAL, 40},
+        {TokenType::T_LESS, 50}, {TokenType::T_LESS_EQUAL, 50},
+        {TokenType::T_GREATER, 50}, {TokenType::T_GREATER_EQUAL, 50},
+        {TokenType::T_PLUS, 60}, {TokenType::T_MINUS, 60},
+        {TokenType::T_ASTERISK, 70}, {TokenType::T_DIVIDE, 70}, {TokenType::T_MOD, 70},
     };
     
     auto it = precedence.find(type);
     return it != precedence.end() ? it->second : 0;
 }
 
-ExprPtr Parser::parseExpression(int precedence) {
+ExprPtr Parser::parseExpression(int minPrecedence) {
     ExprPtr left = parsePrimary();
     
     while (true) {
         Token opToken = peek();
+        if (opToken.type == TokenType::T_EOF) break;
+        
         int opPrecedence = getPrecedence(opToken.type);
+        if (opPrecedence <= minPrecedence) break;
         
-        if (opPrecedence <= precedence) break;
-        
-        advance(); // Consume the operator
+        advance();
         ExprPtr right = parseExpression(opPrecedence);
         left = make_unique<BinaryExpr>(opToken.type, move(left), move(right));
     }
@@ -128,7 +117,6 @@ ExprPtr Parser::parsePrimary() {
     if (match(TokenType::T_IDENTIFIER)) {
         string name = previous().value;
         if (match(TokenType::T_LPAREN)) {
-            // Function call
             vector<ExprPtr> args;
             if (!check(TokenType::T_RPAREN)) {
                 do {
@@ -156,61 +144,61 @@ ExprPtr Parser::parsePrimary() {
     throw errorAtCurrent("Expected expression");
 }
 
-// Declaration parsing
 DeclPtr Parser::parseDeclaration() {
     try {
         if (match(TokenType::T_FN)) {
             return parseFunctionDeclaration();
         }
         
-        // Check if it's a type token (variable declaration)
+        // Check for variable declaration types
         if (peek().type == TokenType::T_INT || peek().type == TokenType::T_FLOAT || 
             peek().type == TokenType::T_BOOL || peek().type == TokenType::T_STRING) {
             return parseVariableDeclaration();
         }
         
+        // Try to parse as expression statement (for error recovery)
+        if (check(TokenType::T_IDENTIFIER) || check(TokenType::T_INTLIT) || 
+            check(TokenType::T_FLOATLIT) || check(TokenType::T_STRINGLIT)) {
+            return nullptr; // Let statement parsing handle it
+        }
+        
         throw errorAtCurrent("Expected declaration");
     } catch (const ParseError& e) {
-        // Synchronize to the next declaration
-        while (!isAtEnd()) {
-            if (previous().type == TokenType::T_DOT) break;
-            
-            switch (peek().type) {
-                case TokenType::T_FN:
-                case TokenType::T_INT:
-                case TokenType::T_FLOAT:
-                case TokenType::T_BOOL:
-                case TokenType::T_STRING:
-                    return nullptr;
-                default:
-                    advance();
-            }
-        }
+        synchronize();
         return nullptr;
     }
 }
 
 std::unique_ptr<FnDecl> Parser::parseFunctionDeclaration() {
-    Token returnTypeToken = consume(TokenType::T_INT, "Expected return type");
+    // Parse return type (custom language uses T_INT for "ginti")
+    Token returnTypeToken = advance(); // Consume the type (should be T_INT for "ginti")
+    
+    // Function name
     Token nameToken = consume(TokenType::T_IDENTIFIER, "Expected function name");
     
+    // Parameters
     consume(TokenType::T_LPAREN, "Expected '(' after function name");
     vector<VarDecl> params = parseParameterList();
     consume(TokenType::T_RPAREN, "Expected ')' after parameters");
     
+    // Function body
     consume(TokenType::T_LBRACE, "Expected '{' before function body");
     vector<StmtPtr> body;
     while (!check(TokenType::T_RBRACE) && !isAtEnd()) {
         body.push_back(parseStatement());
     }
     consume(TokenType::T_RBRACE, "Expected '}' after function body");
-    consume(TokenType::T_DOT, "Expected '.' after function declaration");
+    
+    // Optional dot after function (for custom language)
+    if (check(TokenType::T_DOT)) {
+        advance();
+    }
     
     return make_unique<FnDecl>(returnTypeToken.type, nameToken.value, move(params), move(body));
 }
 
 std::unique_ptr<VarDecl> Parser::parseVariableDeclaration() {
-    Token typeToken = advance(); // Consume the type token
+    Token typeToken = advance();
     Token nameToken = consume(TokenType::T_IDENTIFIER, "Expected variable name");
     
     ExprPtr init = nullptr;
@@ -218,28 +206,40 @@ std::unique_ptr<VarDecl> Parser::parseVariableDeclaration() {
         init = parseExpression();
     }
     
-    consume(TokenType::T_DOT, "Expected '.' after variable declaration");
+    // Custom language uses dot as statement terminator
+    if (check(TokenType::T_DOT)) {
+        advance();
+    }
     
     return make_unique<VarDecl>(typeToken.type, nameToken.value, move(init));
 }
 
-// Statement parsing
 StmtPtr Parser::parseStatement() {
-    if (match(TokenType::T_RETURN)) return parseReturnStatement();
-    if (match(TokenType::T_IF)) return parseIfStatement();
-    if (match(TokenType::T_FOR)) return parseForStatement();
-    if (match(TokenType::T_LBRACE)) return parseBlockStatement();
-    if (match(TokenType::T_BREAK)) {
-        consume(TokenType::T_DOT, "Expected '.' after break statement");
-        return make_unique<BreakStmt>();
+    try {
+        if (match(TokenType::T_RETURN)) return parseReturnStatement();
+        if (match(TokenType::T_IF)) return parseIfStatement();
+        if (match(TokenType::T_FOR)) return parseForStatement();
+        if (match(TokenType::T_BREAK)) return parseBreakStatement();
+        if (match(TokenType::T_LBRACE)) return parseBlock();
+        
+        // Try to parse as expression statement or variable declaration
+        if (peek().type == TokenType::T_INT || peek().type == TokenType::T_FLOAT || 
+            peek().type == TokenType::T_BOOL || peek().type == TokenType::T_STRING) {
+            return parseVariableDeclaration();
+        }
+        
+        return parseExprStatement();
+    } catch (const ParseError& e) {
+        synchronize();
+        return make_unique<ExprStmt>(make_unique<IntLit>(0)); // Return dummy statement
     }
-    
-    return parseExpressionStatement();
 }
 
-StmtPtr Parser::parseExpressionStatement() {
+StmtPtr Parser::parseExprStatement() {
     ExprPtr expr = parseExpression();
-    consume(TokenType::T_DOT, "Expected '.' after expression");
+    if (check(TokenType::T_DOT)) {
+        advance();
+    }
     return make_unique<ExprStmt>(move(expr));
 }
 
@@ -248,8 +248,17 @@ StmtPtr Parser::parseReturnStatement() {
     if (!check(TokenType::T_DOT)) {
         expr = parseExpression();
     }
-    consume(TokenType::T_DOT, "Expected '.' after return statement");
+    if (check(TokenType::T_DOT)) {
+        advance();
+    }
     return make_unique<ReturnStmt>(move(expr));
+}
+
+StmtPtr Parser::parseBreakStatement() {
+    if (check(TokenType::T_DOT)) {
+        advance();
+    }
+    return make_unique<BreakStmt>();
 }
 
 StmtPtr Parser::parseIfStatement() {
@@ -286,17 +295,23 @@ StmtPtr Parser::parseForStatement() {
     consume(TokenType::T_LPAREN, "Expected '(' after 'for'");
     
     unique_ptr<VarDecl> init = nullptr;
-    if (!check(TokenType::T_DOT)) {
-        init = parseVariableDeclaration();
-    } else {
-        advance(); // Consume the dot
+    if (!check(TokenType::T_SEMICOLON)) {
+        if (peek().type == TokenType::T_INT || peek().type == TokenType::T_FLOAT || 
+            peek().type == TokenType::T_BOOL || peek().type == TokenType::T_STRING) {
+            init = parseVariableDeclaration();
+        } else {
+            // Expression init (not supported in custom language)
+            advance(); // Skip
+        }
     }
     
     ExprPtr cond = nullptr;
-    if (!check(TokenType::T_DOT)) {
+    if (!check(TokenType::T_SEMICOLON) && !check(TokenType::T_DOT)) {
         cond = parseExpression();
     }
-    consume(TokenType::T_DOT, "Expected '.' after condition");
+    if (check(TokenType::T_DOT)) {
+        advance();
+    }
     
     ExprPtr update = nullptr;
     if (!check(TokenType::T_RPAREN)) {
@@ -317,27 +332,47 @@ StmtPtr Parser::parseForStatement() {
     return make_unique<ForStmt>(move(init), move(cond), move(update), move(body));
 }
 
-StmtPtr Parser::parseBlockStatement() {
+StmtPtr Parser::parseBlock() {
     vector<StmtPtr> statements;
     while (!check(TokenType::T_RBRACE) && !isAtEnd()) {
         statements.push_back(parseStatement());
     }
     consume(TokenType::T_RBRACE, "Expected '}' after block");
-    // For simplicity, return the first statement or nullptr if empty
-    return statements.empty() ? nullptr : move(statements[0]);
+    return make_unique<BlockStmt>(move(statements));
 }
 
-// Helper functions
 vector<VarDecl> Parser::parseParameterList() {
     vector<VarDecl> params;
     if (!check(TokenType::T_RPAREN)) {
         do {
-            Token typeToken = consume(TokenType::T_INT, "Expected parameter type");
+            Token typeToken = advance(); // Parameter type
             Token nameToken = consume(TokenType::T_IDENTIFIER, "Expected parameter name");
             params.emplace_back(typeToken.type, nameToken.value, nullptr);
         } while (match(TokenType::T_COMMA));
     }
     return params;
+}
+
+void Parser::synchronize() {
+    advance();
+    while (!isAtEnd()) {
+        if (previous().type == TokenType::T_DOT) return;
+        
+        switch (peek().type) {
+            case TokenType::T_FN:
+            case TokenType::T_INT:
+            case TokenType::T_FLOAT:
+            case TokenType::T_BOOL:
+            case TokenType::T_STRING:
+            case TokenType::T_RETURN:
+            case TokenType::T_IF:
+            case TokenType::T_FOR:
+            case TokenType::T_BREAK:
+                return;
+            default:
+                advance();
+        }
+    }
 }
 
 Program Parser::parse() {
@@ -347,23 +382,12 @@ Program Parser::parse() {
             DeclPtr decl = parseDeclaration();
             if (decl) {
                 program.push_back(move(decl));
+            } else {
+                // Skip unexpected tokens
+                if (!isAtEnd()) advance();
             }
         } catch (const ParseError& e) {
-            // Synchronize to the next declaration
-            while (!isAtEnd()) {
-                if (previous().type == TokenType::T_DOT) break;
-                
-                switch (peek().type) {
-                    case TokenType::T_FN:
-                    case TokenType::T_INT:
-                    case TokenType::T_FLOAT:
-                    case TokenType::T_BOOL:
-                    case TokenType::T_STRING:
-                        break;
-                    default:
-                        advance();
-                }
-            }
+            synchronize();
         }
     }
     return program;

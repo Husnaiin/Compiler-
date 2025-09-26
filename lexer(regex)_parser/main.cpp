@@ -44,17 +44,12 @@ int main(int argc, char* argv[]) {
 
     // Print the token stream
     cout << "## Token Stream" << endl;
-    cout << "```" << endl;
-    cout << "[";
+    cout << "[" ;
     for (size_t i = 0; i < tokens.size(); ++i) {
         cout << tokens[i].toString();
-        if (i < tokens.size() - 1) {
-            cout << ", ";
-        }
+        if (i < tokens.size() - 1) cout << ", ";
     }
-    cout << "]" << endl;
-    cout << "```" << endl << endl;
-
+    cout << "]" << endl << endl;
 
     // Parse the tokens
     Parser parser(tokens);
@@ -71,9 +66,7 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    // Print the AST
-    cout << "## Abstract Syntax Tree" << endl;
-    cout << "```" << endl;
+    // Print the AST in the expected format
     cout << "[" << endl;
     for (size_t i = 0; i < program.size(); i++) {
         cout << program[i]->toString(1);
@@ -83,7 +76,6 @@ int main(int argc, char* argv[]) {
         cout << endl;
     }
     cout << "]" << endl;
-    cout << "```" << endl;
 
     return 0;
 }

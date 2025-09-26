@@ -2,34 +2,13 @@
 #include <sstream>
 #include <iomanip>
 
+// Helper function for indentation
 std::string indentStr(int indent) {
-    return std::string(indent * 2, ' ');
+    return std::string(indent * 4, ' ');
 }
 
-// VarDecl implementation
-VarDecl::VarDecl(TokenType t, const std::string& n, ExprPtr i)
-    : type(t), name(n), init(std::move(i)) {}
+// --- Expression Implementations ---
 
-std::string VarDecl::toString(int indent) const {
-    std::stringstream ss;
-    std::string indentStr(indent * 4, ' ');
-    ss << indentStr << "Var(\n";
-    ss << indentStr << "    VarDecl {\n";
-    ss << indentStr << "        type_tok: " << tokenTypeToString(type) << ",\n";
-    ss << indentStr << "        ident: \"" << name << "\",\n";
-    ss << indentStr << "        expr: Some(\n";
-    if (init) {
-        ss << init->toString(indent + 2);
-    } else {
-        ss << indentStr << "            null\n";
-    }
-    ss << indentStr << "        )\n";
-    ss << indentStr << "    }\n";
-    ss << indentStr << ")";
-    return ss.str();
-}
-
-// Expression implementations
 IntLit::IntLit(int val) : value(val) {}
 std::string IntLit::toString(int indent) const {
     return indentStr(indent) + std::to_string(value);
@@ -109,7 +88,8 @@ std::string CallExpr::toString(int indent) const {
     return ss.str();
 }
 
-// Statement implementations
+// --- Statement Implementations ---
+
 ExprStmt::ExprStmt(ExprPtr e) : expr(std::move(e)) {}
 std::string ExprStmt::toString(int indent) const {
     std::stringstream ss;
@@ -140,19 +120,19 @@ IfStmt::IfStmt(ExprPtr c, std::vector<StmtPtr> t, std::vector<StmtPtr> e)
     : cond(std::move(c)), thenBlock(std::move(t)), elseBlock(std::move(e)) {}
 std::string IfStmt::toString(int indent) const {
     std::stringstream ss;
-    ss << "If(\n";
+    ss << indentStr(indent) << "If(\n";
     ss << indentStr(indent + 1) << "IfStmt {\n";
     ss << indentStr(indent + 2) << "cond: Some(\n";
-    ss << indentStr(indent + 3) << cond->toString(indent + 3) << "\n";
+    ss << cond->toString(indent + 3) << "\n";
     ss << indentStr(indent + 2) << "),\n";
     ss << indentStr(indent + 2) << "if_block: [\n";
     for (const auto& stmt : thenBlock) {
-        ss << indentStr(indent + 3) << stmt->toString(indent + 3) << ",\n";
+        ss << stmt->toString(indent + 3) << ",\n";
     }
     ss << indentStr(indent + 2) << "],\n";
     ss << indentStr(indent + 2) << "else_block: [\n";
     for (const auto& stmt : elseBlock) {
-        ss << indentStr(indent + 3) << stmt->toString(indent + 3) << ",\n";
+        ss << stmt->toString(indent + 3) << ",\n";
     }
     ss << indentStr(indent + 2) << "]\n";
     ss << indentStr(indent + 1) << "}\n";
@@ -164,12 +144,12 @@ ForStmt::ForStmt(std::unique_ptr<VarDecl> i, ExprPtr c, ExprPtr u, std::vector<S
     : init(std::move(i)), cond(std::move(c)), update(std::move(u)), body(std::move(b)) {}
 std::string ForStmt::toString(int indent) const {
     std::stringstream ss;
-    ss << "For(\n";
+    ss << indentStr(indent) << "For(\n";
     ss << indentStr(indent + 1) << "ForStmt {\n";
     ss << indentStr(indent + 2) << "init: ";
     if (init) {
         ss << "Some(\n";
-        ss << indentStr(indent + 3) << init->toString(indent + 3) << "\n";
+        ss << init->toString(indent + 3) << "\n";
         ss << indentStr(indent + 2) << ")";
     } else {
         ss << "None";
@@ -179,7 +159,7 @@ std::string ForStmt::toString(int indent) const {
     if (cond) {
         ss << "ExprStmt {\n";
         ss << indentStr(indent + 3) << "expr: Some(\n";
-        ss << indentStr(indent + 4) << cond->toString(indent + 4) << "\n";
+        ss << cond->toString(indent + 4) << "\n";
         ss << indentStr(indent + 3) << ")\n";
         ss << indentStr(indent + 2) << "}";
     } else {
@@ -189,12 +169,7 @@ std::string ForStmt::toString(int indent) const {
     ss << indentStr(indent + 2) << "updt: ";
     if (update) {
         ss << "Some(\n";
-        ss << indentStr(indent + 3) << "Assign(AssignOp)\n";
-        // This is a simplified representation for the update
-        ss << indentStr(indent + 4) << "\"a\"\n";
-        ss << indentStr(indent + 4) << "::Add(AddOp)\n";
-        ss << indentStr(indent + 5) << "\"a\"\n";
-        ss << indentStr(indent + 5) << "1\n";
+        ss << update->toString(indent + 3) << "\n";
         ss << indentStr(indent + 3) << ")";
     } else {
         ss << "None";
@@ -202,7 +177,7 @@ std::string ForStmt::toString(int indent) const {
     ss << ",\n";
     ss << indentStr(indent + 2) << "block: [\n";
     for (const auto& stmt : body) {
-        ss << indentStr(indent + 3) << stmt->toString(indent + 3) << ",\n";
+        ss << stmt->toString(indent + 3) << ",\n";
     }
     ss << indentStr(indent + 2) << "]\n";
     ss << indentStr(indent + 1) << "}\n";
@@ -214,30 +189,67 @@ std::string BreakStmt::toString(int indent) const {
     return indentStr(indent) + "Break";
 }
 
-// FnDecl implementation
+BlockStmt::BlockStmt(std::vector<StmtPtr> s) : statements(std::move(s)) {}
+std::string BlockStmt::toString(int indent) const {
+    std::stringstream ss;
+    ss << indentStr(indent) << "{\n";
+    for (const auto& stmt : statements) {
+        if (stmt) {
+            ss << stmt->toString(indent + 1) << "\n";
+        }
+    }
+    ss << indentStr(indent) << "}";
+    return ss.str();
+}
+
+// --- Declaration Implementations ---
+
+VarDecl::VarDecl(TokenType t, const std::string& n, ExprPtr i)
+    : type(t), name(n), init(std::move(i)) {}
+
+std::string VarDecl::toString(int indent) const {
+    std::stringstream ss;
+    ss << indentStr(indent) << "Var(\n";
+    ss << indentStr(indent + 1) << "VarDecl {\n";
+    ss << indentStr(indent + 2) << "type_tok: " << tokenTypeToString(type) << ",\n";
+    ss << indentStr(indent + 2) << "ident: \"" << name << "\",\n";
+    ss << indentStr(indent + 2) << "expr: Some(\n";
+    if (init) {
+        ss << init->toString(indent + 3) << ",\n";
+    } else {
+        ss << indentStr(indent + 3) << "null,\n";
+    }
+    ss << indentStr(indent + 2) << "),\n";
+    ss << indentStr(indent + 1) << "},\n";
+    ss << indentStr(indent) << ")";
+    return ss.str();
+}
+
 FnDecl::FnDecl(TokenType rt, const std::string& n, std::vector<VarDecl> p, std::vector<StmtPtr> b)
     : returnType(rt), name(n), params(std::move(p)), body(std::move(b)) {}
+
 std::string FnDecl::toString(int indent) const {
     std::stringstream ss;
-    std::string indentStr(indent * 4, ' ');
-    ss << indentStr << "Fn(\n";
-    ss << indentStr << "    FnDecl {\n";
-    ss << indentStr << "        type_tok: " << tokenTypeToString(returnType) << ",\n";
-    ss << indentStr << "        ident: \"" << name << "\",\n";
-    ss << indentStr << "        params: [\n";
+    ss << indentStr(indent) << "Fn(\n";
+    ss << indentStr(indent + 1) << "FnDecl {\n";
+    ss << indentStr(indent + 2) << "type_tok: " << tokenTypeToString(returnType) << ",\n";
+    ss << indentStr(indent + 2) << "ident: \"" << name << "\",\n";
+    ss << indentStr(indent + 2) << "params: [\n";
     for (const auto& param : params) {
-        ss << indentStr << "            Param {\n";
-        ss << indentStr << "                type_tok: " << tokenTypeToString(param.type) << ",\n";
-        ss << indentStr << "                ident: \"" << param.name << "\",\n";
-        ss << indentStr << "            },\n";
+        ss << indentStr(indent + 3) << "Param {\n";
+        ss << indentStr(indent + 4) << "type_tok: " << tokenTypeToString(param.type) << ",\n";
+        ss << indentStr(indent + 4) << "ident: \"" << param.name << "\",\n";
+        ss << indentStr(indent + 3) << "},\n";
     }
-    ss << indentStr << "        ],\n";
-    ss << indentStr << "        block: [\n";
+    ss << indentStr(indent + 2) << "],\n";
+    ss << indentStr(indent + 2) << "block: [\n";
     for (const auto& stmt : body) {
-        if(stmt) ss << stmt->toString(indent + 3) << ",\n";
+        if (stmt) {
+            ss << stmt->toString(indent + 3) << ",\n";
+        }
     }
-    ss << indentStr << "        ]\n";
-    ss << indentStr << "    }\n";
-    ss << indentStr << ")";
+    ss << indentStr(indent + 2) << "],\n";
+    ss << indentStr(indent + 1) << "},\n";
+    ss << indentStr(indent) << ")";
     return ss.str();
 }
