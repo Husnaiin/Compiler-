@@ -13,6 +13,12 @@ int main(int argc, char** argv) {
 	Lexer lexer(input, isFile);
 	std::vector<Token> tokens = lexer.tokenize();
 
+	std::cout << "=== TOKENS ===" << std::endl;
+	for (const auto& tok : tokens) {
+		tok.print();
+		std::cout << std::endl;
+	}
+
 	Parser parser(tokens);
 	auto ast = parser.parse();
 	
@@ -21,6 +27,7 @@ int main(int argc, char** argv) {
 		std::cerr << "AST may be incomplete due to parsing errors." << std::endl;
 	}
 	
+	std::cout << "\n=== AST ===" << std::endl;
 	parser.printAST(ast);
 	return parser.hasErrors() ? 1 : 0;
 }

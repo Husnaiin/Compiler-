@@ -12,3 +12,57 @@ function int some_fn() {
 
 	return 5;
 }
+
+
+
+## **EXAMPLE PROGRAMS**
+
+### **Example 1: Switch Statement**
+```
+function void processValue(int x) {
+    switch (x) {
+        case 1: 
+            print "one";
+            break;
+        case 2:
+            print "two";
+            break;
+        default:
+            print "other";
+    }
+}
+```
+
+### **Example 2: Ternary Operator**
+```
+function int max(int a, int b) {
+    return a > b ? a : b;
+}
+```
+
+### **Example 3: Array Operations**
+```
+function void arrayDemo() {
+    int arr[10];
+    int value = arr[5];
+    arr[0] = 42;
+}
+```
+
+### **Example 4: Pointer Operations**
+```
+function void pointerDemo() {
+    int* ptr;
+    int value = *ptr;
+    ptr = &value;
+}
+```
+
+### **Example 5: Complex Expression**
+```
+function int complexExpr(int a, int b, int c) {
+    return (a > b ? a : b) + (c & 0xFF) << 2;
+}
+```
+
+---

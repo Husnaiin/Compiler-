@@ -816,9 +816,9 @@ std::shared_ptr<StatementNode> Parser::parseStatement() {
     if (match({TokenType::T_PRINT})) {
         return parsePrintStatement();
     }
-    // Check for variable declaration - first check if it's a valid type
-    if (check(TokenType::T_INT) || check(TokenType::T_FLOAT) || check(TokenType::T_STRING) || 
-        check(TokenType::T_CHAR) || check(TokenType::T_BOOL) || check(TokenType::T_VOID)) {
+    // Check for variable declaration - first consume a valid type token
+    if (match({TokenType::T_INT, TokenType::T_FLOAT, TokenType::T_STRING, 
+               TokenType::T_CHAR, TokenType::T_BOOL, TokenType::T_VOID})) {
         return parseVariableDeclaration();
     }
     

@@ -1,12 +1,4 @@
-# 📋 **COMPLETE BNF GRAMMAR FOR C++-LIKE LANGUAGE PARSER**
-
-## **Assignment Requirement: Complete Grammar Documentation**
-
-This document provides the complete Backus-Naur Form (BNF) grammar for the implemented parser that supports **95%+ of C++ constructs** including switch statements, ternary operators, arrays, pointers, and complete expression precedence.
-
----
-
-## **TERMINAL SYMBOLS**
+# **TERMINAL SYMBOLS**
 
 ### **Keywords**
 ```
@@ -305,9 +297,7 @@ enum class ParseError {
 
 ---
 
-## **GRAMMAR COVERAGE ANALYSIS**
 
-### **FULLY SUPPORTED CONSTRUCTS (95%+)**
 
 #### **Control Flow**
 - `if` statements with `else`
@@ -350,92 +340,3 @@ enum class ParseError {
 - Boolean literals
 
 ---
-
-## **EXAMPLE PROGRAMS**
-
-### **Example 1: Switch Statement**
-```
-function void processValue(int x) {
-    switch (x) {
-        case 1: 
-            print "one";
-            break;
-        case 2:
-            print "two";
-            break;
-        default:
-            print "other";
-    }
-}
-```
-
-### **Example 2: Ternary Operator**
-```
-function int max(int a, int b) {
-    return a > b ? a : b;
-}
-```
-
-### **Example 3: Array Operations**
-```
-function void arrayDemo() {
-    int arr[10];
-    int value = arr[5];
-    arr[0] = 42;
-}
-```
-
-### **Example 4: Pointer Operations**
-```
-function void pointerDemo() {
-    int* ptr;
-    int value = *ptr;
-    ptr = &value;
-}
-```
-
-### **Example 5: Complex Expression**
-```
-function int complexExpr(int a, int b, int c) {
-    return (a > b ? a : b) + (c & 0xFF) << 2;
-}
-```
-
----
-
-## 🎯 **IMPLEMENTATION NOTES**
-
-### **Recursive-Descent Parsing**
-- Each grammar rule corresponds to a parsing method
-- Top-down parsing approach
-- Left-to-right token consumption
-- Proper error handling and recovery
-
-### **AST Generation**
-- Each grammar rule generates corresponding AST nodes
-- Hierarchical tree structure
-- Complete program representation
-- Support for all language constructs
-
-### **Error Recovery**
-- Synchronization points for error recovery
-- Meaningful error messages
-- Graceful handling of malformed input
-- Continuation after errors
-
----
-
-## **CONCLUSION**
-
-This BNF grammar represents a **complete C++-like language parser** that supports:
-
-- **95%+ of C++ constructs**
-- **Complete expression precedence**
-- **Advanced control flow**
-- **Data structures (arrays, pointers)**
-- **Comprehensive error handling**
-- **Recursive-descent parsing**
-
-The parser successfully generates ASTs for complex C++-like programs and handles all major language constructs with proper precedence and associativity rules.
-
-**This grammar documentation fulfills the assignment requirement for a complete parser implementation with comprehensive language support.**
