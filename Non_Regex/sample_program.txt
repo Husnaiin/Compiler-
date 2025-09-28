@@ -1,6 +1,14 @@
-function int a(int x, int y)  { return x + y; }
 int b = a(3, 6);
 int f = 1;
-int z = 2
+intii z = 2;
 int h = 6 * f + 3 * 2 - b * b * z * z;
-int c = 10 - (-b * 10 + 12) + (5 - 10);
+intii c = 10 - (-b * 10 + 12) + (5 - 10);
+function int a(int x, int y)  { return x + y; }
+
+function int some_fn() {
+	for (int a = 0 ; a < 10 ; a = a + 1;) {
+		if (a == 5) { break } else {}
+	}
+
+	return 5;
+}
