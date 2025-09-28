@@ -37,6 +37,15 @@ class Lexer {
     void scanIdentifier();
     void scanString();
     void scanChar();
+    void scanHexNumber();
+    void scanOctalNumber();
+    void scanBinaryNumber();
+    void scanScientificNumber();
+    bool isValidHexDigit(char c) const;
+    bool isValidOctalDigit(char c) const;
+    bool isValidBinaryDigit(char c) const;
+    void skipWhitespace();
+    void reportError(const string& message);
     TokenType getKeywordType(const string& text);
 
     vector<Token> tokenize();

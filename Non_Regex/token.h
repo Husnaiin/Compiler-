@@ -49,6 +49,7 @@ enum class TokenType {
     // Literals
     T_INT_LITERAL, T_FLOAT_LITERAL, T_STRING_LITERAL, 
     T_CHAR_LITERAL, T_BOOL_LITERAL, T_NULL_LITERAL,
+    T_HEX_LITERAL, T_OCTAL_LITERAL, T_BINARY_LITERAL,
 
     // Identifiers
     T_IDENTIFIER, 
@@ -72,6 +73,9 @@ class Token {
     string toString() const;
     void print() const;
     TokenType getType() const { return type; }
+    string getLexeme() const { return lexeme; }
+    int getLine() const { return line; }
+    int getColumn() const { return column; }
 };
 
 #endif

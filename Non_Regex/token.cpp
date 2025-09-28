@@ -110,6 +110,9 @@ string Token::getTokenName(TokenType token) const {
         case TokenType::T_CHAR_LITERAL: typeName = "T_CHAR_LITERAL"; break;
         case TokenType::T_BOOL_LITERAL: typeName = "T_BOOL_LITERAL"; break;
         case TokenType::T_NULL_LITERAL: typeName = "T_NULL_LITERAL"; break;
+        case TokenType::T_HEX_LITERAL: typeName = "T_HEX_LITERAL"; break;
+        case TokenType::T_OCTAL_LITERAL: typeName = "T_OCTAL_LITERAL"; break;
+        case TokenType::T_BINARY_LITERAL: typeName = "T_BINARY_LITERAL"; break;
 
         // Identifiers
         case TokenType::T_IDENTIFIER: typeName = "T_IDENTIFIER"; break;
