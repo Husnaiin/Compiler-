@@ -73,6 +73,7 @@ class Token {
     string toString() const;
     void print() const;
     TokenType getType() const { return type; }
+    string getLexeme() const { return lexeme; }
 };
 
 #endif
