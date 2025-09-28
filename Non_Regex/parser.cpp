@@ -269,6 +269,76 @@ void PrintStatementNode::print(int indent) const {
     }
 }
 
+// Switch Statement Node
+std::string SwitchStatementNode::toString() const {
+    std::ostringstream oss;
+    oss << "SwitchStatement(" << expression->toString() << ", ";
+    for (size_t i = 0; i < cases.size(); i++) {
+        if (i > 0) oss << ", ";
+        oss << cases[i]->toString();
+    }
+    if (defaultCase) {
+        oss << ", " << defaultCase->toString();
+    }
+    oss << ")";
+    return oss.str();
+}
+
+void SwitchStatementNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "SwitchStatement:" << std::endl;
+    std::cout << std::string(indent + 2, ' ') << "Expression:" << std::endl;
+    expression->print(indent + 4);
+    
+    for (const auto& caseStmt : cases) {
+        caseStmt->print(indent + 2);
+    }
+    
+    if (defaultCase) {
+        defaultCase->print(indent + 2);
+    }
+}
+
+// Case Statement Node
+std::string CaseStatementNode::toString() const {
+    std::ostringstream oss;
+    oss << "CaseStatement(" << value->toString() << ", ";
+    for (size_t i = 0; i < statements.size(); i++) {
+        if (i > 0) oss << ", ";
+        oss << statements[i]->toString();
+    }
+    oss << ")";
+    return oss.str();
+}
+
+void CaseStatementNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "CaseStatement:" << std::endl;
+    std::cout << std::string(indent + 2, ' ') << "Value:" << std::endl;
+    value->print(indent + 4);
+    
+    for (const auto& stmt : statements) {
+        stmt->print(indent + 2);
+    }
+}
+
+// Default Statement Node
+std::string DefaultStatementNode::toString() const {
+    std::ostringstream oss;
+    oss << "DefaultStatement(";
+    for (size_t i = 0; i < statements.size(); i++) {
+        if (i > 0) oss << ", ";
+        oss << statements[i]->toString();
+    }
+    oss << ")";
+    return oss.str();
+}
+
+void DefaultStatementNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "DefaultStatement:" << std::endl;
+    for (const auto& stmt : statements) {
+        stmt->print(indent + 2);
+    }
+}
+
 // Variable Declaration Node
 std::string VariableDeclarationNode::toString() const {
     std::string initStr = initializer ? initializer->toString() : "null";
@@ -300,6 +370,102 @@ void FunctionCallNode::print(int indent) const {
     for (const auto& arg : arguments) {
         arg->print(indent + 2);
     }
+}
+
+// Ternary Node
+std::string TernaryNode::toString() const {
+    return "Ternary(" + condition->toString() + ", " + trueValue->toString() + ", " + falseValue->toString() + ")";
+}
+
+void TernaryNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "Ternary:" << std::endl;
+    std::cout << std::string(indent + 2, ' ') << "Condition:" << std::endl;
+    condition->print(indent + 4);
+    std::cout << std::string(indent + 2, ' ') << "True Value:" << std::endl;
+    trueValue->print(indent + 4);
+    std::cout << std::string(indent + 2, ' ') << "False Value:" << std::endl;
+    falseValue->print(indent + 4);
+}
+
+// Array Declaration Node
+std::string ArrayDeclarationNode::toString() const {
+    std::string sizeStr = size ? size->toString() : "null";
+    std::string initStr = initializer ? initializer->toString() : "null";
+    return "ArrayDeclaration(" + type + ", " + name + ", " + sizeStr + ", " + initStr + ")";
+}
+
+void ArrayDeclarationNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "ArrayDeclaration: " << type << " " << name;
+    if (size) {
+        std::cout << "[" << size->toString() << "]";
+    }
+    std::cout << std::endl;
+    if (initializer) {
+        std::cout << std::string(indent + 2, ' ') << "Initializer:" << std::endl;
+        initializer->print(indent + 4);
+    }
+}
+
+// Array Access Node
+std::string ArrayAccessNode::toString() const {
+    return "ArrayAccess(" + arrayName + ", " + index->toString() + ")";
+}
+
+void ArrayAccessNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "ArrayAccess: " << arrayName << "[" << index->toString() << "]" << std::endl;
+}
+
+// Array Initialization Node
+std::string ArrayInitializationNode::toString() const {
+    std::ostringstream oss;
+    oss << "ArrayInitialization(";
+    for (size_t i = 0; i < elements.size(); i++) {
+        if (i > 0) oss << ", ";
+        oss << elements[i]->toString();
+    }
+    oss << ")";
+    return oss.str();
+}
+
+void ArrayInitializationNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "ArrayInitialization:" << std::endl;
+    for (const auto& element : elements) {
+        element->print(indent + 2);
+    }
+}
+
+// Pointer Declaration Node
+std::string PointerDeclarationNode::toString() const {
+    std::string initStr = initializer ? initializer->toString() : "null";
+    return "PointerDeclaration(" + baseType + "*, " + name + ", " + initStr + ")";
+}
+
+void PointerDeclarationNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "PointerDeclaration: " << baseType << "* " << name << std::endl;
+    if (initializer) {
+        std::cout << std::string(indent + 2, ' ') << "Initializer:" << std::endl;
+        initializer->print(indent + 4);
+    }
+}
+
+// Dereference Node
+std::string DereferenceNode::toString() const {
+    return "Dereference(" + operand->toString() + ")";
+}
+
+void DereferenceNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "Dereference:" << std::endl;
+    operand->print(indent + 2);
+}
+
+// Address Of Node
+std::string AddressOfNode::toString() const {
+    return "AddressOf(" + operand->toString() + ")";
+}
+
+void AddressOfNode::print(int indent) const {
+    std::cout << std::string(indent, ' ') << "AddressOf:" << std::endl;
+    operand->print(indent + 2);
 }
 
 
@@ -504,6 +670,9 @@ std::shared_ptr<StatementNode> Parser::parseStatement() {
     if (match({TokenType::T_DO})) {
         return parseDoWhileStatement();
     }
+    if (match({TokenType::T_SWITCH})) {
+        return parseSwitchStatement();
+    }
     if (match({TokenType::T_RETURN})) {
         return parseReturnStatement();
     }
@@ -533,10 +702,12 @@ std::shared_ptr<ExpressionNode> Parser::parseExpression() {
 }
 
 std::shared_ptr<ExpressionNode> Parser::parseAssignment() {
-    auto expr = parseOr();
+    auto expr = parseTernary();
     
     if (match({TokenType::T_ASSIGN, TokenType::T_PLUS_ASSIGN, TokenType::T_MINUS_ASSIGN,
-               TokenType::T_MULT_ASSIGN, TokenType::T_DIV_ASSIGN, TokenType::T_MOD_ASSIGN})) {
+               TokenType::T_MULT_ASSIGN, TokenType::T_DIV_ASSIGN, TokenType::T_MOD_ASSIGN,
+               TokenType::T_AND_ASSIGN, TokenType::T_OR_ASSIGN, TokenType::T_XOR_ASSIGN,
+               TokenType::T_LSHIFT_ASSIGN, TokenType::T_RSHIFT_ASSIGN})) {
         Token equals = previous();
         auto value = parseAssignment();
         
@@ -552,37 +723,11 @@ std::shared_ptr<ExpressionNode> Parser::parseAssignment() {
 }
 
 std::shared_ptr<ExpressionNode> Parser::parseOr() {
-    auto expr = parseAnd();
-    
-    while (match({TokenType::T_OR})) {
-        Token op = previous();
-        auto right = parseAnd();
-        
-        auto binary = std::make_shared<BinaryOpNode>();
-        binary->op = op.getLexeme();
-        binary->left = expr;
-        binary->right = right;
-        expr = binary;
-    }
-    
-    return expr;
+    return parseLogicalOr();
 }
 
 std::shared_ptr<ExpressionNode> Parser::parseAnd() {
-    auto expr = parseEquality();
-    
-    while (match({TokenType::T_AND})) {
-        Token op = previous();
-        auto right = parseEquality();
-        
-        auto binary = std::make_shared<BinaryOpNode>();
-        binary->op = op.getLexeme();
-        binary->left = expr;
-        binary->right = right;
-        expr = binary;
-    }
-    
-    return expr;
+    return parseLogicalAnd();
 }
 
 std::shared_ptr<ExpressionNode> Parser::parseEquality() {
@@ -603,12 +748,12 @@ std::shared_ptr<ExpressionNode> Parser::parseEquality() {
 }
 
 std::shared_ptr<ExpressionNode> Parser::parseComparison() {
-    auto expr = parseTerm();
+    auto expr = parseShift();
     
     while (match({TokenType::T_GREATER_THAN, TokenType::T_GREATER_THAN_EQUAL,
                  TokenType::T_LESS_THAN, TokenType::T_LESS_THAN_EQUAL})) {
         Token op = previous();
-        auto right = parseTerm();
+        auto right = parseShift();
         
         auto binary = std::make_shared<BinaryOpNode>();
         binary->op = op.getLexeme();
@@ -621,11 +766,15 @@ std::shared_ptr<ExpressionNode> Parser::parseComparison() {
 }
 
 std::shared_ptr<ExpressionNode> Parser::parseTerm() {
-    auto expr = parseFactor();
+    return parseAdditive();
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseAdditive() {
+    auto expr = parseMultiplicative();
     
     while (match({TokenType::T_PLUS, TokenType::T_MINUS})) {
         Token op = previous();
-        auto right = parseFactor();
+        auto right = parseMultiplicative();
         
         auto binary = std::make_shared<BinaryOpNode>();
         binary->op = op.getLexeme();
@@ -637,7 +786,7 @@ std::shared_ptr<ExpressionNode> Parser::parseTerm() {
     return expr;
 }
 
-std::shared_ptr<ExpressionNode> Parser::parseFactor() {
+std::shared_ptr<ExpressionNode> Parser::parseMultiplicative() {
     auto expr = parseUnary();
     
     while (match({TokenType::T_MULTIPLY, TokenType::T_DIVIDE, TokenType::T_MODULO})) {
@@ -654,6 +803,10 @@ std::shared_ptr<ExpressionNode> Parser::parseFactor() {
     return expr;
 }
 
+std::shared_ptr<ExpressionNode> Parser::parseFactor() {
+    return parseMultiplicative();
+}
+
 std::shared_ptr<ExpressionNode> Parser::parseUnary() {
     if (match({TokenType::T_NOT, TokenType::T_MINUS, TokenType::T_BIT_NOT})) {
         Token op = previous();
@@ -663,6 +816,22 @@ std::shared_ptr<ExpressionNode> Parser::parseUnary() {
         unary->op = op.getLexeme();
         unary->operand = right;
         return unary;
+    }
+    
+    // Handle dereference operator (*)
+    if (match({TokenType::T_MULTIPLY})) {
+        auto operand = parseUnary();
+        auto deref = std::make_shared<DereferenceNode>();
+        deref->operand = operand;
+        return deref;
+    }
+    
+    // Handle address-of operator (&)
+    if (match({TokenType::T_BIT_AND})) {
+        auto operand = parseUnary();
+        auto addr = std::make_shared<AddressOfNode>();
+        addr->operand = operand;
+        return addr;
     }
     
     // Handle increment/decrement operators
@@ -727,6 +896,23 @@ std::shared_ptr<ExpressionNode> Parser::parsePrimary() {
         } else {
             auto identifier = std::make_shared<IdentifierNode>();
             identifier->name = previous().getLexeme();
+            
+            // Check for array access
+            if (check(TokenType::T_LBRACKET)) {
+                advance(); // consume '['
+                auto index = parseExpression();
+                if (!check(TokenType::T_RBRACKET)) {
+                    error("Expected ']' after array index");
+                    return nullptr;
+                }
+                advance(); // consume ']'
+                
+                auto arrayAccess = std::make_shared<ArrayAccessNode>();
+                arrayAccess->arrayName = identifier->name;
+                arrayAccess->index = index;
+                return arrayAccess;
+            }
+            
             return identifier;
         }
     }
@@ -1054,6 +1240,229 @@ std::shared_ptr<FunctionCallNode> Parser::parseFunctionCall() {
     advance(); // consume ')'
     
     return call;
+}
+
+std::shared_ptr<SwitchStatementNode> Parser::parseSwitchStatement() {
+    auto switchStmt = std::make_shared<SwitchStatementNode>();
+    
+    if (!check(TokenType::T_LPAREN)) {
+        error("Expected '(' after switch");
+        return nullptr;
+    }
+    advance(); // consume '('
+    
+    switchStmt->expression = parseExpression();
+    
+    if (!check(TokenType::T_RPAREN)) {
+        error("Expected ')' after switch expression");
+        return nullptr;
+    }
+    advance(); // consume ')'
+    
+    if (!check(TokenType::T_LBRACE)) {
+        error("Expected '{' after switch");
+        return nullptr;
+    }
+    advance(); // consume '{'
+    
+    // Parse cases and default
+    while (!isAtEnd() && !check(TokenType::T_RBRACE)) {
+        if (match({TokenType::T_CASE})) {
+            switchStmt->cases.push_back(parseCaseStatement());
+        } else if (match({TokenType::T_DEFAULT})) {
+            if (switchStmt->defaultCase) {
+                error("Multiple default cases in switch statement");
+                return nullptr;
+            }
+            switchStmt->defaultCase = parseDefaultStatement();
+        } else {
+            error("Expected 'case' or 'default' in switch statement");
+            return nullptr;
+        }
+    }
+    
+    if (!check(TokenType::T_RBRACE)) {
+        error("Expected '}' after switch statement");
+        return nullptr;
+    }
+    advance(); // consume '}'
+    
+    return switchStmt;
+}
+
+std::shared_ptr<CaseStatementNode> Parser::parseCaseStatement() {
+    auto caseStmt = std::make_shared<CaseStatementNode>();
+    
+    caseStmt->value = parseExpression();
+    
+    if (!match({TokenType::T_COLON})) {
+        error("Expected ':' after case value");
+        return nullptr;
+    }
+    
+    // Parse statements until next case/default/}
+    while (!isAtEnd() && !check(TokenType::T_CASE) && 
+           !check(TokenType::T_DEFAULT) && !check(TokenType::T_RBRACE)) {
+        auto stmt = parseStatement();
+        if (stmt) {
+            caseStmt->statements.push_back(stmt);
+        } else {
+            // If parsing fails, try to synchronize
+            if (synchronize() == ParseError::UnexpectedEOF) {
+                break;
+            }
+        }
+    }
+    
+    return caseStmt;
+}
+
+std::shared_ptr<DefaultStatementNode> Parser::parseDefaultStatement() {
+    auto defaultStmt = std::make_shared<DefaultStatementNode>();
+    
+    if (!match({TokenType::T_COLON})) {
+        error("Expected ':' after default");
+        return nullptr;
+    }
+    
+    // Parse statements until next case/default/}
+    while (!isAtEnd() && !check(TokenType::T_CASE) && 
+           !check(TokenType::T_DEFAULT) && !check(TokenType::T_RBRACE)) {
+        auto stmt = parseStatement();
+        if (stmt) {
+            defaultStmt->statements.push_back(stmt);
+        } else {
+            // If parsing fails, try to synchronize
+            if (synchronize() == ParseError::UnexpectedEOF) {
+                break;
+            }
+        }
+    }
+    
+    return defaultStmt;
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseTernary() {
+    auto expr = parseLogicalOr();
+    
+    if (match({TokenType::T_QUESTION})) {
+        auto trueValue = parseExpression();
+        if (!match({TokenType::T_COLON})) {
+            error("Expected ':' in ternary operator");
+            return nullptr;
+        }
+        auto falseValue = parseTernary();
+        
+        auto ternary = std::make_shared<TernaryNode>();
+        ternary->condition = expr;
+        ternary->trueValue = trueValue;
+        ternary->falseValue = falseValue;
+        return ternary;
+    }
+    
+    return expr;
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseLogicalOr() {
+    auto expr = parseLogicalAnd();
+    
+    while (match({TokenType::T_OR})) {
+        Token op = previous();
+        auto right = parseLogicalAnd();
+        
+        auto binary = std::make_shared<BinaryOpNode>();
+        binary->op = op.getLexeme();
+        binary->left = expr;
+        binary->right = right;
+        expr = binary;
+    }
+    
+    return expr;
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseLogicalAnd() {
+    auto expr = parseBitwiseOr();
+    
+    while (match({TokenType::T_AND})) {
+        Token op = previous();
+        auto right = parseBitwiseOr();
+        
+        auto binary = std::make_shared<BinaryOpNode>();
+        binary->op = op.getLexeme();
+        binary->left = expr;
+        binary->right = right;
+        expr = binary;
+    }
+    
+    return expr;
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseBitwiseOr() {
+    auto expr = parseBitwiseXor();
+    
+    while (match({TokenType::T_BIT_OR})) {
+        Token op = previous();
+        auto right = parseBitwiseXor();
+        
+        auto binary = std::make_shared<BinaryOpNode>();
+        binary->op = op.getLexeme();
+        binary->left = expr;
+        binary->right = right;
+        expr = binary;
+    }
+    
+    return expr;
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseBitwiseXor() {
+    auto expr = parseBitwiseAnd();
+    
+    while (match({TokenType::T_BIT_XOR})) {
+        Token op = previous();
+        auto right = parseBitwiseAnd();
+        
+        auto binary = std::make_shared<BinaryOpNode>();
+        binary->op = op.getLexeme();
+        binary->left = expr;
+        binary->right = right;
+        expr = binary;
+    }
+    
+    return expr;
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseBitwiseAnd() {
+    auto expr = parseEquality();
+    
+    while (match({TokenType::T_BIT_AND})) {
+        Token op = previous();
+        auto right = parseEquality();
+        
+        auto binary = std::make_shared<BinaryOpNode>();
+        binary->op = op.getLexeme();
+        binary->left = expr;
+        binary->right = right;
+        expr = binary;
+    }
+    
+    return expr;
+}
+
+std::shared_ptr<ExpressionNode> Parser::parseShift() {
+    auto expr = parseAdditive();
+    
+    while (match({TokenType::T_LEFT_SHIFT, TokenType::T_RIGHT_SHIFT})) {
+        Token op = previous();
+        auto right = parseAdditive();
+        
+        auto binary = std::make_shared<BinaryOpNode>();
+        binary->op = op.getLexeme();
+        binary->left = expr;
+        binary->right = right;
+        expr = binary;
+    }
+    
+    return expr;
 }
 
 void Parser::printAST(const std::shared_ptr<ProgramNode>& program) {

@@ -1,0 +1,6 @@
+function int a(int x, int y)  { return x + y; }
+int b = a(3, 6);
+int f = 1;
+int z = 2
+int h = 6 * f + 3 * 2 - b * b * z * z;
+int c = 10 - (-b * 10 + 12) + (5 - 10);

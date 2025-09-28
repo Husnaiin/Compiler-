@@ -1,20 +1,21 @@
 #include "lexer.h"
+#include "parser.h"
 #include "token.h"
 #include <iostream>
 #include <string>
 #include <vector>
 
 int main(int argc, char** argv) {
-	std::string input = argc > 1 ? argv[1] : "int x = 42;";
-	bool isFile = (argc > 1);
+	// Use a file input by default; allow passing a source file path as argv[1]
+	std::string input = (argc > 1) ? argv[1] : "sample_program.txt";
+	bool isFile = true;
 
 	Lexer lexer(input, isFile);
 	std::vector<Token> tokens = lexer.tokenize();
 
-	for (const auto& tok : tokens) {
-		tok.print();
-		std::cout << std::endl;
-	}
+	Parser parser(tokens);
+	auto ast = parser.parse();
+	parser.printAST(ast);
 	return 0;
 }
 
