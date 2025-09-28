@@ -130,8 +130,7 @@ void Lexer::scanNextToken(){
                     advance();
                 }
                 if (!foundClose) {
-                    throw runtime_error("Unterminated block comment at line " + to_string(commentStartLine) +
-                                         ", column " + to_string(commentStartColumn));
+                    reportError("Unterminated block comment");
                 }
             } else {
                 addToken(TokenType::T_DIVIDE);
@@ -230,12 +229,11 @@ void Lexer::scanNextToken(){
             addToken(TokenType::T_QUESTION);
             break;
         case ' ':
-            break;
         case '\t':
-            break;
         case '\r':
-            break;
         case '\n':
+            // Skip whitespace efficiently
+            skipWhitespace();
             break;
         default:
             if (isDigit(currentChar)) {
@@ -243,24 +241,51 @@ void Lexer::scanNextToken(){
             } else if (isAlpha(currentChar)) {
                 scanIdentifier();
             } else {
-                addToken(TokenType::T_ERROR);
+                reportError("Unexpected character: '" + string(1, currentChar) + "'");
             }
             break;
     }
 }
 
 void Lexer::scanNumber() {
+    // Check for different number formats
+    // Note: The '0' has already been consumed by advance() in scanNextToken()
+    // So we need to check the current character (which should be '0') and the next one
+    if (input[start] == '0') {
+        char next = peek();
+        if (next == 'x' || next == 'X') {
+            scanHexNumber();
+            return;
+        } else if (next == 'o' || next == 'O') {
+            scanOctalNumber();
+            return;
+        } else if (next == 'b' || next == 'B') {
+            scanBinaryNumber();
+            return;
+        }
+    }
+    
+    // Regular decimal number
     while (isDigit(peek())) advance();
     bool isFloat = false;
+    
+    // Check for decimal point
     if (peek() == '.' && isDigit(peek(1))) {
         isFloat = true;
         advance();
         while (isDigit(peek())) advance();
     }
+    
+    // Check for scientific notation (e.g., 1.23e-4, 1E+5)
+    if (peek() == 'e' || peek() == 'E') {
+        scanScientificNumber();
+        return;
+    }
 
     // If after number we immediately have an alpha/underscore, it's invalid identifier like 123abc
     if (isAlpha(peek())) {
-        throw runtime_error("Invalid identifier: identifiers cannot start with a number at line " + to_string(lineNumber));
+        reportError("Invalid identifier: identifiers cannot start with a number");
+        return;
     }
 
     if (isFloat) {
@@ -290,7 +315,10 @@ void Lexer::scanString() {
         if (c == '\\') {
             advance(); // consume '\\'
             char e = peek();
-            if (isAtEnd()) break;
+            if (isAtEnd()) {
+                reportError("Unterminated string literal: missing closing quote");
+                return;
+            }
             switch (e) {
                 case 'n': value.push_back('\n'); break;
                 case 't': value.push_back('\t'); break;
@@ -298,7 +326,27 @@ void Lexer::scanString() {
                 case '\\': value.push_back('\\'); break;
                 case '"': value.push_back('"'); break;
                 case '\'': value.push_back('\''); break;
-                default: value.push_back(e); break;
+                case '0': value.push_back('\0'); break;  // null character
+                case 'a': value.push_back('\a'); break;  // bell
+                case 'b': value.push_back('\b'); break;  // backspace
+                case 'f': value.push_back('\f'); break;  // form feed
+                case 'v': value.push_back('\v'); break;  // vertical tab
+                case 'u': // Unicode escape sequence (simplified)
+                    advance(); // consume 'u'
+                    if (isAtEnd() || !isValidHexDigit(peek())) {
+                        reportError("Invalid Unicode escape sequence");
+                        return;
+                    }
+                    // For simplicity, just consume 4 hex digits
+                    for (int i = 0; i < 4 && isValidHexDigit(peek()); i++) {
+                        advance();
+                    }
+                    value.push_back('?'); // placeholder for Unicode character
+                    continue;
+                default: 
+                    reportError("Invalid escape sequence: \\" + string(1, e));
+                    value.push_back(e); 
+                    break;
             }
             advance();
             continue;
@@ -306,7 +354,10 @@ void Lexer::scanString() {
         value.push_back(c);
         advance();
     }
-    if (isAtEnd()) { throw runtime_error("Unterminated string literal at line " + to_string(lineNumber)); }
+    if (isAtEnd()) { 
+        reportError("Unterminated string literal: missing closing quote");
+        return;
+    }
     advance(); // consume closing '"'
     addToken(TokenType::T_STRING_LITERAL, value);
     // emit closing quotes token
@@ -316,10 +367,16 @@ void Lexer::scanString() {
 void Lexer::scanChar() {
     // opening quote already consumed in caller
     char c;
-    if (isAtEnd()) throw runtime_error("Unterminated char literal at line " + to_string(lineNumber));
+    if (isAtEnd()) {
+        reportError("Unterminated char literal: missing closing quote");
+        return;
+    }
     if (peek() == '\\') {
         advance();
-        if (isAtEnd()) throw runtime_error("Unterminated char escape at line " + to_string(lineNumber));
+        if (isAtEnd()) {
+            reportError("Unterminated char escape sequence");
+            return;
+        }
         char e = peek();
         switch (e) {
             case 'n': c = '\n'; break;
@@ -328,14 +385,25 @@ void Lexer::scanChar() {
             case '\\': c = '\\'; break;
             case '\'': c = '\''; break;
             case '"': c = '"'; break;
-            default: c = e; break;
+            case '0': c = '\0'; break;  // null character
+            case 'a': c = '\a'; break;  // bell
+            case 'b': c = '\b'; break;  // backspace
+            case 'f': c = '\f'; break;  // form feed
+            case 'v': c = '\v'; break;  // vertical tab
+            default: 
+                reportError("Invalid escape sequence in char literal: \\" + string(1, e));
+                c = e; 
+                break;
         }
         advance();
     } else {
         c = peek();
         advance();
     }
-    if (peek() != '\'') throw runtime_error("Unterminated char literal at line " + to_string(lineNumber));
+    if (peek() != '\'') {
+        reportError("Unterminated char literal: missing closing quote");
+        return;
+    }
     advance(); // consume closing quote
     string value(1, c);
     addToken(TokenType::T_CHAR_LITERAL, value);
@@ -427,6 +495,119 @@ bool Lexer::isAlphaNumeric(char c) const{
 
 bool Lexer::isSpace(char c) const{
     return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+// Enhanced number scanning methods
+void Lexer::scanHexNumber() {
+    advance(); // consume '0'
+    advance(); // consume 'x' or 'X'
+    
+    if (!isValidHexDigit(peek())) {
+        reportError("Invalid hexadecimal number: expected hex digits after 0x");
+        return;
+    }
+    
+    while (isValidHexDigit(peek())) advance();
+    
+    // Check for invalid characters after hex number
+    if (isAlpha(peek())) {
+        reportError("Invalid identifier: identifiers cannot start with a number");
+        return;
+    }
+    
+    addToken(TokenType::T_HEX_LITERAL);
+}
+
+void Lexer::scanOctalNumber() {
+    advance(); // consume '0'
+    advance(); // consume 'o' or 'O'
+    
+    if (!isValidOctalDigit(peek())) {
+        reportError("Invalid octal number: expected octal digits after 0o");
+        return;
+    }
+    
+    while (isValidOctalDigit(peek())) advance();
+    
+    // Check for invalid characters after octal number
+    if (isAlpha(peek())) {
+        reportError("Invalid identifier: identifiers cannot start with a number");
+        return;
+    }
+    
+    addToken(TokenType::T_OCTAL_LITERAL);
+}
+
+void Lexer::scanBinaryNumber() {
+    advance(); // consume '0'
+    advance(); // consume 'b' or 'B'
+    
+    if (!isValidBinaryDigit(peek())) {
+        reportError("Invalid binary number: expected binary digits after 0b");
+        return;
+    }
+    
+    while (isValidBinaryDigit(peek())) advance();
+    
+    // Check for invalid characters after binary number
+    if (isAlpha(peek())) {
+        reportError("Invalid identifier: identifiers cannot start with a number");
+        return;
+    }
+    
+    addToken(TokenType::T_BINARY_LITERAL);
+}
+
+void Lexer::scanScientificNumber() {
+    advance(); // consume 'e' or 'E'
+    
+    // Check for optional sign
+    if (peek() == '+' || peek() == '-') {
+        advance();
+    }
+    
+    // Must have at least one digit after 'e'
+    if (!isDigit(peek())) {
+        reportError("Invalid scientific notation: expected digits after exponent");
+        return;
+    }
+    
+    while (isDigit(peek())) advance();
+    
+    // Check for invalid characters after scientific number
+    if (isAlpha(peek())) {
+        reportError("Invalid identifier: identifiers cannot start with a number");
+        return;
+    }
+    
+    addToken(TokenType::T_FLOAT_LITERAL);
+}
+
+// Validation methods for different number bases
+bool Lexer::isValidHexDigit(char c) const {
+    return isDigit(c) || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+}
+
+bool Lexer::isValidOctalDigit(char c) const {
+    return c >= '0' && c <= '7';
+}
+
+bool Lexer::isValidBinaryDigit(char c) const {
+    return c == '0' || c == '1';
+}
+
+// Efficient whitespace skipping
+void Lexer::skipWhitespace() {
+    while (!isAtEnd() && isSpace(peek())) {
+        advance();
+    }
+}
+
+// Enhanced error reporting
+void Lexer::reportError(const string& message) {
+    string errorMsg = "Lexical Error at line " + to_string(lineNumber) + 
+                     ", column " + to_string(startColumn) + ": " + message;
+    addToken(TokenType::T_ERROR, errorMsg);
 }
 
 
