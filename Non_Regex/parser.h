@@ -372,6 +372,8 @@ class Parser {
 private:
     std::vector<Token> tokens;
     size_t current;
+    int errorCount;
+    bool hadError;
     
     // Helper methods
     bool isAtEnd() const;
@@ -384,6 +386,8 @@ private:
     // Error handling
     void error(const std::string& message);
     ParseError synchronize();
+    std::string getTokenName(TokenType token) const;
+    bool isValidType(TokenType type) const;
     
     // Parsing methods
     std::shared_ptr<ProgramNode> parseProgram();
@@ -439,6 +443,8 @@ public:
     Parser(const std::vector<Token>& tokens);
     std::shared_ptr<ProgramNode> parse();
     void printAST(const std::shared_ptr<ProgramNode>& program);
+    int getErrorCount() const { return errorCount; }
+    bool hasErrors() const { return hadError; }
 };
 
 #endif

@@ -36,7 +36,11 @@ void ProgramNode::print(int indent) const {
     if (!globalVariables.empty()) {
         std::cout << std::string(indent + 2, ' ') << "Global Variables:" << std::endl;
         for (const auto& var : globalVariables) {
-            var->print(indent + 4);
+            if (var) {
+                var->print(indent + 4);
+            } else {
+                std::cout << std::string(indent + 4, ' ') << "[NULL]" << std::endl;
+            }
         }
     }
     
@@ -44,7 +48,11 @@ void ProgramNode::print(int indent) const {
     if (!functions.empty()) {
         std::cout << std::string(indent + 2, ' ') << "Functions:" << std::endl;
         for (const auto& func : functions) {
-            func->print(indent + 4);
+            if (func) {
+                func->print(indent + 4);
+            } else {
+                std::cout << std::string(indent + 4, ' ') << "[NULL]" << std::endl;
+            }
         }
     }
 }
@@ -141,7 +149,11 @@ std::string BlockNode::toString() const {
 void BlockNode::print(int indent) const {
     std::cout << std::string(indent, ' ') << "Block:" << std::endl;
     for (const auto& stmt : statements) {
-        stmt->print(indent + 2);
+        if (stmt) {
+            stmt->print(indent + 2);
+        } else {
+            std::cout << std::string(indent + 2, ' ') << "[NULL]" << std::endl;
+        }
     }
 }
 
@@ -154,9 +166,17 @@ std::string IfStatementNode::toString() const {
 void IfStatementNode::print(int indent) const {
     std::cout << std::string(indent, ' ') << "IfStatement:" << std::endl;
     std::cout << std::string(indent + 2, ' ') << "Condition:" << std::endl;
-    condition->print(indent + 4);
+    if (condition) {
+        condition->print(indent + 4);
+    } else {
+        std::cout << std::string(indent + 4, ' ') << "[NULL]" << std::endl;
+    }
     std::cout << std::string(indent + 2, ' ') << "Then:" << std::endl;
-    thenBlock->print(indent + 4);
+    if (thenBlock) {
+        thenBlock->print(indent + 4);
+    } else {
+        std::cout << std::string(indent + 4, ' ') << "[NULL]" << std::endl;
+    }
     if (elseBlock) {
         std::cout << std::string(indent + 2, ' ') << "Else:" << std::endl;
         elseBlock->print(indent + 4);
@@ -480,7 +500,7 @@ void AddressOfNode::print(int indent) const {
 
 // Parser Implementation
 
-Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens), current(0) {}
+Parser::Parser(const std::vector<Token>& tokens) : tokens(tokens), current(0), errorCount(0), hadError(false) {}
 
 bool Parser::isAtEnd() const {
     return peek().getType() == TokenType::T_EOF;
@@ -514,16 +534,94 @@ bool Parser::match(const std::vector<TokenType>& types) {
     return false;
 }
 
+std::string Parser::getTokenName(TokenType token) const {
+    switch (token) {
+        case TokenType::T_FUNCTION: return "T_FUNCTION";
+        case TokenType::T_INT: return "T_INT";
+        case TokenType::T_FLOAT: return "T_FLOAT";
+        case TokenType::T_STRING: return "T_STRING";
+        case TokenType::T_BOOL: return "T_BOOL";
+        case TokenType::T_CHAR: return "T_CHAR";
+        case TokenType::T_IF: return "T_IF";
+        case TokenType::T_ELSE: return "T_ELSE";
+        case TokenType::T_WHILE: return "T_WHILE";
+        case TokenType::T_FOR: return "T_FOR";
+        case TokenType::T_RETURN: return "T_RETURN";
+        case TokenType::T_BREAK: return "T_BREAK";
+        case TokenType::T_CONTINUE: return "T_CONTINUE";
+        case TokenType::T_PRINT: return "T_PRINT";
+        case TokenType::T_TRUE: return "T_TRUE";
+        case TokenType::T_FALSE: return "T_FALSE";
+        case TokenType::T_VOID: return "T_VOID";
+        case TokenType::T_IDENTIFIER: return "T_IDENTIFIER";
+        case TokenType::T_INT_LITERAL: return "T_INT_LITERAL";
+        case TokenType::T_FLOAT_LITERAL: return "T_FLOAT_LITERAL";
+        case TokenType::T_STRING_LITERAL: return "T_STRING_LITERAL";
+        case TokenType::T_CHAR_LITERAL: return "T_CHAR_LITERAL";
+        case TokenType::T_BOOL_LITERAL: return "T_BOOL_LITERAL";
+        case TokenType::T_PLUS: return "T_PLUS";
+        case TokenType::T_MINUS: return "T_MINUS";
+        case TokenType::T_MULTIPLY: return "T_MULTIPLY";
+        case TokenType::T_DIVIDE: return "T_DIVIDE";
+        case TokenType::T_ASSIGN: return "T_ASSIGN";
+        case TokenType::T_EQUAL: return "T_EQUAL";
+        case TokenType::T_NOT_EQUAL: return "T_NOT_EQUAL";
+        case TokenType::T_GREATER_THAN: return "T_GREATER_THAN";
+        case TokenType::T_LESS_THAN: return "T_LESS_THAN";
+        case TokenType::T_LPAREN: return "T_LPAREN";
+        case TokenType::T_RPAREN: return "T_RPAREN";
+        case TokenType::T_LBRACE: return "T_LBRACE";
+        case TokenType::T_RBRACE: return "T_RBRACE";
+        case TokenType::T_SEMICOLON: return "T_SEMICOLON";
+        case TokenType::T_COMMA: return "T_COMMA";
+        case TokenType::T_EOF: return "T_EOF";
+        case TokenType::T_ERROR: return "T_ERROR";
+        default: return "UNKNOWN_TOKEN";
+    }
+}
+
+bool Parser::isValidType(TokenType type) const {
+    return type == TokenType::T_INT || 
+           type == TokenType::T_FLOAT || 
+           type == TokenType::T_STRING || 
+           type == TokenType::T_CHAR || 
+           type == TokenType::T_BOOL || 
+           type == TokenType::T_VOID;
+}
+
 void Parser::error(const std::string& message) {
-    std::cerr << "Parse Error: " << message << std::endl;
+    errorCount++;
+    hadError = true;
+    
+    if (!isAtEnd()) {
+        Token current = peek();
+        std::cerr << "Parse Error at line " << current.getLine() << ", column " << current.getColumn() 
+                  << ": " << message << std::endl;
+        std::cerr << "  Token: '" << current.getLexeme() << "' (Type: " 
+                  << getTokenName(current.getType()) << ")" << std::endl;
+    } else {
+        Token last = previous();
+        std::cerr << "Parse Error at line " << last.getLine() << ", column " << last.getColumn() 
+                  << ": " << message << std::endl;
+        std::cerr << "  Unexpected end of file" << std::endl;
+    }
 }
 
 ParseError Parser::synchronize() {
     advance();
     
     while (!isAtEnd()) {
-        if (previous().getType() == TokenType::T_SEMICOLON) return ParseError::UnexpectedToken;
+        // If we hit a semicolon, we've reached the end of a statement
+        if (previous().getType() == TokenType::T_SEMICOLON) {
+            return ParseError::UnexpectedToken;
+        }
         
+        // If we hit a closing brace, we've reached the end of a block
+        if (previous().getType() == TokenType::T_RBRACE) {
+            return ParseError::UnexpectedToken;
+        }
+        
+        // Look for statement start tokens
         switch (peek().getType()) {
             case TokenType::T_FUNCTION:
             case TokenType::T_INT:
@@ -534,15 +632,22 @@ ParseError Parser::synchronize() {
             case TokenType::T_VOID:
             case TokenType::T_IF:
             case TokenType::T_WHILE:
+            case TokenType::T_FOR:
+            case TokenType::T_DO:
             case TokenType::T_RETURN:
             case TokenType::T_PRINT:
+            case TokenType::T_BREAK:
+            case TokenType::T_CONTINUE:
+            case TokenType::T_SWITCH:
+            case TokenType::T_CASE:
+            case TokenType::T_DEFAULT:
                 return ParseError::UnexpectedToken;
             default:
                 advance();
         }
     }
     
-    return ParseError::UnexpectedToken;
+    return ParseError::UnexpectedEOF;
 }
 
 std::shared_ptr<ProgramNode> Parser::parse() {
@@ -555,7 +660,10 @@ std::shared_ptr<ProgramNode> Parser::parseProgram() {
     while (!isAtEnd()) {
         if (check(TokenType::T_FUNCTION)) {
             // Function declaration
-            program->functions.push_back(parseFunction());
+            auto func = parseFunction();
+            if (func) {
+                program->functions.push_back(func);
+            }
         } else if (check(TokenType::T_INT) || check(TokenType::T_FLOAT) || 
                    check(TokenType::T_STRING) || check(TokenType::T_CHAR) || 
                    check(TokenType::T_BOOL) || check(TokenType::T_VOID)) {
@@ -567,14 +675,37 @@ std::shared_ptr<ProgramNode> Parser::parseProgram() {
                 if (check(TokenType::T_LPAREN)) {
                     // This is a function declaration
                     current = saveCurrent;
-                    program->functions.push_back(parseFunction());
+                    auto func = parseFunction();
+                    if (func) {
+                        program->functions.push_back(func);
+                    }
                 } else {
                     // This is a global variable declaration
                     current = saveCurrent;
-                    program->globalVariables.push_back(parseGlobalVariableDeclaration());
+                    auto var = parseGlobalVariableDeclaration();
+                    if (var) {
+                        program->globalVariables.push_back(var);
+                    }
                 }
             } else {
                 current = saveCurrent;
+                break;
+            }
+        } else if (check(TokenType::T_IDENTIFIER)) {
+            // Check for invalid type (identifier that's not a valid type)
+            size_t saveCurrent = current;
+            advance(); // consume the identifier
+            if (check(TokenType::T_IDENTIFIER)) {
+                current = saveCurrent; // restore position
+                error("Invalid type '" + peek().getLexeme() + "'. Expected: int, float, string, char, bool, or void");
+                advance(); // consume the invalid type
+                // Try to recover by parsing as global variable declaration anyway
+                auto var = parseGlobalVariableDeclaration();
+                if (var) {
+                    program->globalVariables.push_back(var);
+                }
+            } else {
+                current = saveCurrent; // restore position
                 break;
             }
         } else {
@@ -685,15 +816,32 @@ std::shared_ptr<StatementNode> Parser::parseStatement() {
     if (match({TokenType::T_PRINT})) {
         return parsePrintStatement();
     }
-    if (match({TokenType::T_INT, TokenType::T_FLOAT, TokenType::T_STRING, 
-               TokenType::T_CHAR, TokenType::T_BOOL})) {
+    // Check for variable declaration - first check if it's a valid type
+    if (check(TokenType::T_INT) || check(TokenType::T_FLOAT) || check(TokenType::T_STRING) || 
+        check(TokenType::T_CHAR) || check(TokenType::T_BOOL) || check(TokenType::T_VOID)) {
         return parseVariableDeclaration();
+    }
+    
+    // Check for invalid type (identifier that's not a keyword)
+    if (check(TokenType::T_IDENTIFIER)) {
+        // Look ahead to see if this is followed by another identifier (variable declaration with invalid type)
+        size_t saveCurrent = current;
+        advance(); // consume the identifier
+        if (check(TokenType::T_IDENTIFIER)) {
+            current = saveCurrent; // restore position
+            error("Invalid type '" + peek().getLexeme() + "'. Expected: int, float, string, char, bool, or void");
+            advance(); // consume the invalid type
+            // Try to recover by parsing as variable declaration anyway
+            return parseVariableDeclaration();
+        }
+        current = saveCurrent; // restore position
     }
     if (check(TokenType::T_IDENTIFIER)) {
         return parseAssignmentStatement();
     }
     
     error("Expected statement");
+    synchronize();
     return nullptr;
 }
 
@@ -1145,6 +1293,7 @@ std::shared_ptr<VariableDeclarationNode> Parser::parseVariableDeclaration() {
     // Parse variable name
     if (!check(TokenType::T_IDENTIFIER)) {
         error("Expected variable name");
+        synchronize();
         return nullptr;
     }
     varDecl->name = advance().getLexeme();
@@ -1156,6 +1305,7 @@ std::shared_ptr<VariableDeclarationNode> Parser::parseVariableDeclaration() {
     
     if (!check(TokenType::T_SEMICOLON)) {
         error("Expected ';' after variable declaration");
+        synchronize();
         return nullptr;
     }
     advance(); // consume ';'
@@ -1170,6 +1320,7 @@ std::shared_ptr<VariableDeclarationNode> Parser::parseGlobalVariableDeclaration(
     if (!match({TokenType::T_INT, TokenType::T_FLOAT, TokenType::T_STRING, 
                 TokenType::T_CHAR, TokenType::T_BOOL})) {
         error("Expected variable type");
+        synchronize();
         return nullptr;
     }
     varDecl->type = previous().getLexeme();
@@ -1177,6 +1328,7 @@ std::shared_ptr<VariableDeclarationNode> Parser::parseGlobalVariableDeclaration(
     // Parse variable name
     if (!check(TokenType::T_IDENTIFIER)) {
         error("Expected variable name");
+        synchronize();
         return nullptr;
     }
     varDecl->name = advance().getLexeme();
@@ -1188,6 +1340,7 @@ std::shared_ptr<VariableDeclarationNode> Parser::parseGlobalVariableDeclaration(
     
     if (!check(TokenType::T_SEMICOLON)) {
         error("Expected ';' after global variable declaration");
+        synchronize();
         return nullptr;
     }
     advance(); // consume ';'
@@ -1205,7 +1358,12 @@ std::shared_ptr<BlockNode> Parser::parseBlock() {
     advance(); // consume '{'
     
     while (!check(TokenType::T_RBRACE) && !isAtEnd()) {
-        block->statements.push_back(parseStatement());
+        auto stmt = parseStatement();
+        if (stmt) {
+            block->statements.push_back(stmt);
+        }
+        // If parseStatement() returns nullptr due to error, continue parsing
+        // The synchronize() call in parseStatement() should have advanced the parser
     }
     
     if (!check(TokenType::T_RBRACE)) {

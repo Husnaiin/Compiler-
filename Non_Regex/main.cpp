@@ -15,8 +15,14 @@ int main(int argc, char** argv) {
 
 	Parser parser(tokens);
 	auto ast = parser.parse();
+	
+	if (parser.hasErrors()) {
+		std::cerr << "\nParsing completed with " << parser.getErrorCount() << " error(s)." << std::endl;
+		std::cerr << "AST may be incomplete due to parsing errors." << std::endl;
+	}
+	
 	parser.printAST(ast);
-	return 0;
+	return parser.hasErrors() ? 1 : 0;
 }
 
 

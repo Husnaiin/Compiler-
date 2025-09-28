@@ -74,6 +74,8 @@ class Token {
     void print() const;
     TokenType getType() const { return type; }
     string getLexeme() const { return lexeme; }
+    int getLine() const { return line; }
+    int getColumn() const { return column; }
 };
 
 #endif
