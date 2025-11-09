@@ -1,7 +1,0 @@
-int x;
-function int main() {
-    int x;
-    x = 2;
-}
-
-
