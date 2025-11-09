@@ -1,0 +1,83 @@
+// Examples that are valid in C++ but invalid per this project's custom grammar
+
+// 1) Preprocessor and using
+#include <iostream>
+using namespace std;
+int main() { return 0; }
+
+// 2) Class/struct declarations
+class Foo { int x; };
+struct S { int x; };
+
+// 3) Templates
+template <typename T>
+T add(T a, T b) { return a + b; }
+
+// 4) Exceptions
+try { int x = 0; } catch (const std::exception& e) { }
+
+// 5) References
+int xr = 1; int& r = xr;
+
+// 6) Types not in grammar: double/long/unsigned
+double d = 0.1;
+long ln = 42;
+unsigned u = 3u;
+
+// 7) Namespaces and scope operator
+namespace N { int y; }
+std::cout << "hi";
+
+// 8) Member access (.) usage with objects (no classes/structs in grammar)
+obj.field;
+
+// 9) Hex/Octal/Binary literals
+int hx = 0xFF;
+int oc = 0777;
+int bn = 0b1010;
+
+// 10) Multiple declarators in one statement
+int a = 1, b = 2;
+
+// 11) Postfix increment/decrement
+int i = 0; i++; i--;
+
+// 12) Arrow operator
+p->m;
+
+// 13) Raw string literal
+std::string rs = R"(hello)";
+
+// 14) Default function parameter
+int defparam(int x = 5) { return x; }
+
+// 15) const/volatile qualifiers
+const int cx = 5; volatile int vx = 0;
+
+// 16) nullptr literal
+int* p = nullptr;
+
+// 17) sizeof operator
+int sz = sizeof(int);
+
+// 18) Operator overloading (requires classes)
+struct Op { int operator+(int) const; };
+
+// 19) Using declarations/aliases
+using std::string; using alias_t = int;
+
+// 20) Attributes
+[[nodiscard]] int fattr() { return 1; }
+
+// 21) Lambdas
+auto lam = [] (int x) { return x + 1; };
+
+// 22) Enum/enum class
+enum E { A, B }; enum class EC { A, B };
+
+// 23) Scope resolution in declarations
+::N::y;
+
+// 24) Wide/Unicode character/string prefixes
+wchar_t wc = L'X'; auto ws = L"wide"; auto us = u8"utf8";
+

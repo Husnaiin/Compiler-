@@ -1,0 +1,5 @@
+function int main() {
+    x = 1;
+}
+
+

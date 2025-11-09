@@ -1,0 +1,77 @@
+// Valid programs according to the custom grammar (lexer+parser)
+
+// Global variables
+int g = 42;
+int h;
+
+// Simple function with return and ternary
+function int max(int a, int b) {
+	return a > b ? a : b;
+}
+
+// If/else, local var, print
+function void branch(int x) {
+	int y = 10;
+	if (x > y) {
+		print x;
+	} else {
+		print y;
+	}
+}
+
+// While loop with update via assignment
+function void countToThree() {
+	int i = 0;
+	while (i < 3) {
+		print i;
+		i = i + 1;
+	}
+}
+
+// For loop (parser expects ';' after update before ')')
+function void loopFive() {
+	for (int i = 0; i < 5; i = i + 1;) {
+		print i;
+	}
+}
+
+// Switch/case/default with break
+function void show(int x) {
+	switch (x) {
+		case 1: print "one"; break;
+		case 2: print "two"; break;
+		default: print "other";
+	}
+}
+
+// Address-of and dereference (grammar-level; no type checking)
+function void ptrOps() {
+	int x = 5;
+	int y = *(&x);
+	print &x;
+	print y;
+}
+
+// Bitwise, logical, shifts, equality
+function int ops(int a, int b) {
+	int c = (a & b) | (a ^ b);
+	int d = (a << 1) >> 1;
+	bool eq = (a == b) && true || false;
+	return eq ? c : d;
+}
+
+// Strings, chars, escapes, print
+function void texts() {
+	string s = "hi\n\t\"";
+	char ch = '\'';
+	print s;
+}
+
+// Function calls and precedence
+function int calls() {
+	int b = max(3, 6);
+	int z = 2;
+	int h = 6 * z + 3 * 2 - b * b * z * z;
+	int c = 10 - (-b * 10 + 12) + (5 - 10);
+	return c;
+}

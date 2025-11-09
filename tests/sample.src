@@ -1,4 +1,8 @@
-function int max(int a, int b) {
-    int jk=10;
-    return a > b ? a : b;
+function void countToThree() {
+	int i = 98 + c * 134 - b / -g;
+
+	while (i < 3) {
+		print i;
+		i = i + 1;
+	}
 }
