@@ -17,6 +17,24 @@ cd Compiler-
 ```
 
 ---
+## Directory layout (high-level)
+```
+Compiler-/
+├─ Non_Regex/           # Lexer, Parser, and Scope Analyzer (C++17)
+│  ├─ lexer.{h,cpp}
+│  ├─ token.{h,cpp}
+│  ├─ parser.{h,cpp}
+│  ├─ scope_analyzer.{h,cpp}
+│  └─ main.cpp          # Demo entrypoint: tokens → AST → scope analysis
+├─ Regex/               # Regex-based lexer variant
+│  ├─ lexer.{h,cpp}
+│  ├─ token.{h,cpp}
+│  └─ main.cpp
+├─ tests/               # Test programs (including scope analysis tests)
+└─ README.md
+```
+
+---
 ## Non_Regex lexer
 
 ### Build
@@ -81,6 +99,47 @@ Examples:
 The Regex version prints tokens via `toString()` (includes type/value and may include position info depending on implementation).
 
 ---
+## Scope Analyzer (Non_Regex)
+
+Scope analysis is implemented only in the `Non_Regex/` directory. It consumes the AST built by the `Non_Regex` parser and produces:
+- a scope tree (global/function/block scopes),
+- a symbol table (variables, parameters, functions),
+- annotations on AST nodes for later passes,
+- and scope-related errors (undeclared use, redefinitions, undefined function call).
+
+### Build
+Build a single binary that runs Lexer → Parser → Scope Analyzer:
+```bash
+mkdir -p build
+g++ -std=c++17 -O2 \
+  Non_Regex/lexer.cpp \
+  Non_Regex/token.cpp \
+  Non_Regex/parser.cpp \
+  Non_Regex/scope_analyzer.cpp \
+  Non_Regex/main.cpp \
+  -o build/scope_analyzer
+```
+
+### Run on a single test
+Tests now live under the top-level `tests/` folder:
+```bash
+./build/scope_analyzer tests/test_scope_valid.txt
+```
+
+### Run all scope tests
+```bash
+for f in tests/test_scope_*.txt; do
+  echo "=== $f ==="
+  ./build/scope_analyzer "$f"
+  echo
+done
+```
+
+Notes:
+- If you run without an argument, the demo may default to a sample file. Prefer passing an explicit test file path under `tests/`.
+- The scope analyzer currently targets the `Non_Regex` pipeline (there is no scope analysis under `Regex/`).
+
+---
 ## Troubleshooting
 - “Could not open file”: Ensure you pass a valid path. Avoid leading `/` unless it’s an absolute path that exists.
 - Multiple binaries: If you’ve built to both repo root and subfolders previously, prefer the ones under `Non_Regex/` and `Regex/` per the commands above.
@@ -101,4 +160,10 @@ g++ -std=c++17 Regex/main.cpp Regex/lexer.cpp Regex/token.cpp -o Regex/regex_dem
 # Run Regex
 ./Regex/regex_demo Non_Regex/sample.src
 ./Regex/regex_demo tests/heavy_valid.src
+
+# Build & run Scope Analyzer (Non_Regex)
+mkdir -p build
+g++ -std=c++17 -O2 Non_Regex/lexer.cpp Non_Regex/token.cpp Non_Regex/parser.cpp Non_Regex/scope_analyzer.cpp Non_Regex/main.cpp -o build/scope_analyzer
+./build/scope_analyzer tests/test_scope_valid.txt
+for f in tests/test_scope_*.txt; do ./build/scope_analyzer "$f"; done
 ```
