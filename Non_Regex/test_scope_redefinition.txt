@@ -1,0 +1,6 @@
+function int main() {
+    int a;
+    int a;
+}
+
+

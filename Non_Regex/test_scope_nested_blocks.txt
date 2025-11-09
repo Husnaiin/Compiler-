@@ -1,0 +1,8 @@
+function int main() {
+    {
+        int y;
+    }
+    y = 5;
+}
+
+
