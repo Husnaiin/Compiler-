@@ -1,0 +1,60 @@
+// Test program with intentional type errors
+
+// Error: Non-void function without return statement
+function int noReturn() {
+    int x = 5;
+    int y = 10;
+}
+
+// Error: Wrong return type
+function int wrongReturn() {
+    float result = 3.14;
+    return result;
+}
+
+// Error: Void function returns value
+function void voidReturn() {
+    return 42;
+}
+
+// Error: Wrong parameter count
+function int twoParams(int a, int b) {
+    return a + b;
+}
+
+function void testParamCount() {
+    int result = twoParams(5);
+}
+
+// Error: Logical operation on integers without proper conversion
+function void logicalError() {
+    int x = 10;
+    int y = 20;
+    bool result = x && y;
+}
+
+// Error: Bitwise operation on float
+function void bitwiseError() {
+    float f = 3.14;
+    float g = 2.71;
+    float result = f & g;
+}
+
+// Error: Non-boolean condition
+function void conditionError() {
+    int x = 5;
+    if (x) {
+        print x;
+    }
+}
+
+// Error: Break outside loop
+function void breakError() {
+    int x = 5;
+    break;
+}
+
+// Main function
+function void main() {
+    print 42;
+}

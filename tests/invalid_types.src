@@ -1,0 +1,93 @@
+// Test program with type errors
+// This file intentionally contains various type errors
+
+// Error: Non-void function without return
+function int noReturn() {
+    int x = 5;
+}
+
+// Error: Wrong return type
+function int wrongReturn() {
+    return 3.14;
+}
+
+// Error: Void function returns value
+function void voidReturnsValue() {
+    return 42;
+}
+
+// Error: Function with type mismatches
+function void typeErrors() {
+    // Error: Arithmetic on non-numeric
+    bool b1 = true;
+    bool b2 = false;
+    
+    // Error: Logical operation on non-booleans
+    int x = 10 && 20;
+    
+    // Error: Bitwise operation on float
+    float f = 3.14;
+    
+    // Error: Shift operation on float
+    float shifted = f << 2;
+    
+    // Error: Array index not integer
+    int arr[10];
+    
+    // Error: Modulo on float
+    float mod = 5.5 % 2.0;
+}
+
+// Error: Wrong parameter count
+function int twoParams(int a, int b) {
+    return a + b;
+}
+
+function void callErrors() {
+    int result = twoParams(5);
+}
+
+// Error: Wrong parameter types
+function void wrongParamType() {
+    int result = twoParams(5, 3.14);
+}
+
+// Error: Break outside loop
+function void invalidBreak() {
+    int x = 5;
+    break;
+}
+
+// Error: Continue outside loop
+function void invalidContinue() {
+    int x = 5;
+    continue;
+}
+
+// Error: Non-boolean condition
+function void nonBoolCondition() {
+    int x = 10;
+    if (x) {
+        print x;
+    }
+    
+    while (5) {
+        break;
+    }
+}
+
+// Error: Dereference non-pointer
+function void dereferenceError() {
+    int x = 10;
+    int y = *x;
+}
+
+// Error: Address-of on non-lvalue
+function void addressOfError() {
+    int* ptr = &(5 + 10);
+}
+
+// Valid function for testing
+function void main() {
+    print 42;
+}

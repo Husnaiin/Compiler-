@@ -1,0 +1,58 @@
+// Simple test program for type checker
+// Valid program with basic type checking
+
+// Simple addition function
+function int add(int a, int b) {
+    return a + b;
+}
+
+// Function with float operations
+function float multiply(float x, float y) {
+    return x * y;
+}
+
+// Function with control flow
+function int max(int a, int b) {
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+// Function with loop
+function int factorial(int n) {
+    int result = 1;
+    int i = 1;
+    while (i <= n) {
+        result = result * i;
+        i = i + 1;
+    }
+    return result;
+}
+
+// Boolean function
+function bool isPositive(int x) {
+    return x > 0;
+}
+
+// Main function
+function void main() {
+    int x = 10;
+    int y = 20;
+    int sum = add(x, y);
+    
+    float pi = 3.14;
+    float doubled = multiply(pi, 2.0);
+    
+    int bigger = max(x, y);
+    int fact = factorial(5);
+    
+    bool positive = isPositive(x);
+    
+    print sum;
+    print doubled;
+    print bigger;
+    print fact;
+    print positive;
+}
