@@ -1,0 +1,64 @@
+// Test program for type checker
+// This file contains various test cases to verify type checking
+
+// Valid function - should pass
+function int add(int a, int b) {
+    return a + b;
+}
+
+// Valid function with float
+function float multiply(float x, float y) {
+    return x * y;
+}
+
+// Function with mixed types
+function float divide(int a, int b) {
+    return a / b;
+}
+
+// Function with control flow
+function int max(int a, int b) {
+    if (a > b) {
+        return a;
+    } else {
+        return b;
+    }
+}
+
+// Function with loop
+function int factorial(int n) {
+    int result = 1;
+    int i = 1;
+    while (i <= n) {
+        result = result * i;
+        i = i + 1;
+    }
+    return result;
+}
+
+// Function with array
+function void printArray(int arr[], int size) {
+    int i = 0;
+    for (i = 0; i < size; i = i + 1) {
+        print arr[i];
+    }
+}
+
+// Main function
+function void main() {
+    int x = 10;
+    int y = 20;
+    int sum = add(x, y);
+    
+    float pi = 3.14;
+    float area = multiply(pi, 2.0);
+    
+    int bigger = max(x, y);
+    
+    int fact = factorial(5);
+    
+    print sum;
+    print area;
+    print bigger;
+    print fact;
+}

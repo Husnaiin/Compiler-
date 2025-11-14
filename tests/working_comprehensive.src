@@ -1,0 +1,221 @@
+// Working comprehensive test for type checker
+
+// Test 1: Arithmetic operations
+function int testArithmetic() {
+    int a = 10;
+    int b = 3;
+    int sum = a + b;
+    int diff = a - b;
+    int prod = a * b;
+    int quot = a / b;
+    return sum;
+}
+
+// Test 2: Comparisons
+function bool testComparisons(int x, int y) {
+    bool greater = x > y;
+    bool equal = x == y;
+    bool less = x < y;
+    return greater;
+}
+
+// Test 3: Logical operations
+function bool testLogical(bool a, bool b) {
+    bool andResult = a && b;
+    bool orResult = a || b;
+    bool notResult = !a;
+    return andResult;
+}
+
+// Test 4: Ternary operator
+function int testTernary(int a, int b) {
+    int max = a > b ? a : b;
+    return max;
+}
+
+// Test 5: While loop
+function int testWhile(int n) {
+    int sum = 0;
+    int i = 0;
+    while (i < n) {
+        sum = sum + i;
+        i = i + 1;
+    }
+    return sum;
+}
+
+// Test 6: For loop
+function int testFor(int limit) {
+    int sum = 0;
+    int i = 0;
+    for (i = 0; i < limit; i = i + 1) {
+        sum = sum + i;
+    }
+    return sum;
+}
+
+// Test 7: If-else
+function int testIfElse(int x) {
+    int result = 0;
+    if (x > 0) {
+        result = 1;
+    } else {
+        result = -1;
+    }
+    return result;
+}
+
+// Test 8: Nested conditions
+function int testNested(int x, int y) {
+    int result = 0;
+    if (x > 0) {
+        if (y > 0) {
+            result = 1;
+        } else {
+            result = 2;
+        }
+    } else {
+        result = 3;
+    }
+    return result;
+}
+
+// Test 9: Switch statement
+function int testSwitch(int x) {
+    int result = 0;
+    switch (x) {
+        case 1:
+            result = 10;
+            break;
+        case 2:
+            result = 20;
+            break;
+        default:
+            result = 0;
+    }
+    return result;
+}
+
+// Test 10: Bitwise operations
+function int testBitwise(int a, int b) {
+    int andRes = a & b;
+    int orRes = a | b;
+    int xorRes = a ^ b;
+    int notRes = ~a;
+    return andRes;
+}
+
+// Test 11: Shift operations
+function int testShift(int x) {
+    int left = x << 2;
+    int right = x >> 1;
+    return left;
+}
+
+// Test 12: Unary operations
+function int testUnary(int x) {
+    int neg = -x;
+    int pos = +x;
+    return neg;
+}
+
+// Test 13: Float operations
+function float testFloat(float x, float y) {
+    float sum = x + y;
+    float prod = x * y;
+    float div = x / y;
+    return sum;
+}
+
+// Test 14: Mixed int and float
+function float testMixed(int x, float y) {
+    float result = x + y;
+    return result;
+}
+
+// Test 15: Do-while loop
+function int testDoWhile(int n) {
+    int count = 0;
+    do {
+        count = count + 1;
+    } while (count < n);
+    return count;
+}
+
+// Test 16: Multiple returns
+function int testMultiReturn(int x) {
+    if (x > 0) {
+        return 1;
+    }
+    if (x < 0) {
+        return -1;
+    }
+    return 0;
+}
+
+// Test 17: Void function
+function void testVoid() {
+    int x = 42;
+    print x;
+}
+
+// Test 18: Break in loop
+function int testBreak() {
+    int i = 0;
+    while (i < 100) {
+        if (i == 10) {
+            break;
+        }
+        i = i + 1;
+    }
+    return i;
+}
+
+// Test 19: Continue in loop
+function int testContinue() {
+    int sum = 0;
+    int i = 0;
+    while (i < 10) {
+        i = i + 1;
+        if (i == 5) {
+            continue;
+        }
+        sum = sum + i;
+    }
+    return sum;
+}
+
+// Test 20: Complex expression
+function int testComplex(int a, int b, int c) {
+    int result = a + b * c;
+    return result;
+}
+
+// Main function
+function void main() {
+    int r1 = testArithmetic();
+    bool r2 = testComparisons(10, 20);
+    bool r3 = testLogical(true, false);
+    int r4 = testTernary(15, 25);
+    int r5 = testWhile(10);
+    int r6 = testFor(10);
+    int r7 = testIfElse(5);
+    int r8 = testNested(1, 2);
+    int r9 = testSwitch(2);
+    int r10 = testBitwise(12, 7);
+    int r11 = testShift(8);
+    int r12 = testUnary(42);
+    float r13 = testFloat(3.14, 2.71);
+    float r14 = testMixed(10, 3.5);
+    int r15 = testDoWhile(5);
+    int r16 = testMultiReturn(5);
+    
+    testVoid();
+    
+    int r18 = testBreak();
+    int r19 = testContinue();
+    int r20 = testComplex(2, 3, 4);
+    
+    print r1;
+    print r2;
+}
