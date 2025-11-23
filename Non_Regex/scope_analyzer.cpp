@@ -6,7 +6,7 @@
 
 // Constructor
 ScopeAnalyzer::ScopeAnalyzer() 
-    : next_symbol_id_(1), next_scope_id_(1) {
+    : next_symbol_id_(1), next_scope_id_(1), loop_depth_(0) {
     // Create global scope
     push_scope(ScopeKind::Global);
 }
@@ -260,17 +260,24 @@ void ScopeAnalyzer::analyze_statement(std::shared_ptr<StatementNode> stmt) {
         if (if_stmt->elseBlock) analyze_block(if_stmt->elseBlock);
     } else if (auto while_stmt = std::dynamic_pointer_cast<WhileStatementNode>(stmt)) {
         if (while_stmt->condition) analyze_expression(while_stmt->condition);
+        loop_depth_++;  // Enter loop
         if (while_stmt->body) analyze_block(while_stmt->body);
+        loop_depth_--;  // Exit loop
     } else if (auto for_stmt = std::dynamic_pointer_cast<ForStatementNode>(stmt)) {
         if (for_stmt->initialization) analyze_statement(for_stmt->initialization);
         if (for_stmt->condition) analyze_expression(for_stmt->condition);
         if (for_stmt->update) analyze_statement(for_stmt->update);
+        loop_depth_++;  // Enter loop
         if (for_stmt->body) analyze_block(for_stmt->body);
+        loop_depth_--;  // Exit loop
     } else if (auto do_while = std::dynamic_pointer_cast<DoWhileStatementNode>(stmt)) {
+        loop_depth_++;  // Enter loop
         if (do_while->body) analyze_block(do_while->body);
+        loop_depth_--;  // Exit loop
         if (do_while->condition) analyze_expression(do_while->condition);
     } else if (auto switch_stmt = std::dynamic_pointer_cast<SwitchStatementNode>(stmt)) {
         if (switch_stmt->expression) analyze_expression(switch_stmt->expression);
+        loop_depth_++;  // Enter switch (allows break)
         for (auto& case_stmt : switch_stmt->cases) {
             if (case_stmt) {
                 if (case_stmt->value) analyze_expression(case_stmt->value);
@@ -284,12 +291,28 @@ void ScopeAnalyzer::analyze_statement(std::shared_ptr<StatementNode> stmt) {
                 analyze_statement(default_stmt);
             }
         }
+        loop_depth_--;  // Exit switch
+    } else if (auto break_stmt = std::dynamic_pointer_cast<BreakStatementNode>(stmt)) {
+        // Validate break is inside a loop or switch
+        if (loop_depth_ <= 0) {
+            SourceLocation loc = get_node_location(break_stmt.get());
+            report_error(ScopeError::VariableRedefinition,  // Reusing error type
+                        "Break statement not within loop or switch",
+                        loc, std::nullopt);
+        }
+    } else if (auto continue_stmt = std::dynamic_pointer_cast<ContinueStatementNode>(stmt)) {
+        // Validate continue is inside a loop (not switch)
+        if (loop_depth_ <= 0) {
+            SourceLocation loc = get_node_location(continue_stmt.get());
+            report_error(ScopeError::VariableRedefinition,  // Reusing error type
+                        "Continue statement not within loop",
+                        loc, std::nullopt);
+        }
     } else if (auto return_stmt = std::dynamic_pointer_cast<ReturnStatementNode>(stmt)) {
         if (return_stmt->expression) analyze_expression(return_stmt->expression);
     } else if (auto print_stmt = std::dynamic_pointer_cast<PrintStatementNode>(stmt)) {
         if (print_stmt->expression) analyze_expression(print_stmt->expression);
     }
-    // Break, Continue don't need analysis
 }
 
 // Analyze expression
@@ -469,6 +492,7 @@ ScopeAnalysisResult ScopeAnalyzer::analyze_scopes(std::shared_ptr<ProgramNode> a
     annotations_.clear();
     next_symbol_id_ = 1;
     next_scope_id_ = 1;
+    loop_depth_ = 0;
     
     // Recreate global scope
     push_scope(ScopeKind::Global);

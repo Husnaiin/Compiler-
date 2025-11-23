@@ -129,6 +129,9 @@ private:
     SymbolId next_symbol_id_;
     ScopeId next_scope_id_;
     
+    // Loop context tracking for break/continue validation
+    int loop_depth_;  // Tracks nesting level of loops (while, for, do-while, switch)
+    
     // Helper methods
     ScopeId current_scope_id() const;
     Scope* current_scope();
