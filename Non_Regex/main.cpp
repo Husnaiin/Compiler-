@@ -5,6 +5,7 @@
 #include "type_checker.h"
 #include "ir_generator.h"
 #include "llvm_backend.h"
+#include "riscv_backend.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -203,6 +204,25 @@ int main(int argc, char** argv) {
 		}
 	}
 	
+	// Step 7: RISC-V Assembly emission (textual)
+	std::cout << "\n=== STEP 7: RISC-V (RV32I/M) ASSEMBLY EMISSION ===" << std::endl;
+	{
+		RiscVBackend rvb;
+		std::string s_filename = input;
+		size_t last_dot3 = s_filename.find_last_of(".");
+		if (last_dot3 != std::string::npos) {
+			s_filename = s_filename.substr(0, last_dot3);
+		}
+		s_filename += ".s";
+		if (rvb.emitAssembly(ir_result.program, s_filename)) {
+			std::cout << "RISC-V assembly saved to: " << s_filename << std::endl;
+			std::cout << "You can build it with (using clang target):" << std::endl;
+			std::cout << "  clang -target riscv32 -march=rv32im " << s_filename << " -o a.out" << std::endl;
+		} else {
+			std::cerr << "Failed to generate RISC-V assembly file." << std::endl;
+		}
+	}
+	
 	// Compilation Summary
 	std::cout << "\n" << std::string(60, '=') << std::endl;
 	std::cout << "COMPILATION SUCCESSFUL" << std::endl;
@@ -214,6 +234,7 @@ int main(int argc, char** argv) {
 	std::cout << "  Semantic Analysis (Type Checking)" << std::endl;
 	std::cout << "  IR Generation (Three-Address Code)" << std::endl;
 	std::cout << "  LLVM IR Emission (.ll)" << std::endl;
+	std::cout << "  RISC-V Assembly Emission (.s)" << std::endl;
 	std::cout << std::string(60, '=') << std::endl;
 	
 	return 0;
