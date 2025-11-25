@@ -27,7 +27,9 @@ Compiler-/
 │  ├─ scope_analyzer.{h,cpp}
 │  ├─ type_checker.{h,cpp}
 │  ├─ ir_generator.{h,cpp}
-│  └─ main.cpp          # Entry: tokens → AST → scope → types → IR
+│  ├─ llvm_backend.{h,cpp}     # LLVM IR (.ll) emission from TAC
+│  ├─ riscv_backend.{h,cpp}    # RISC-V assembly (.s) emission from TAC
+│  └─ main.cpp          # Entry: tokens → AST → scope → types → IR → LLVM/RISCV
 ├─ Regex/               # Regex-based lexer variant
 │  ├─ lexer.{h,cpp}
 │  ├─ token.{h,cpp}
@@ -110,7 +112,7 @@ Scope analysis is implemented only in the `Non_Regex/` directory. It consumes th
 - and scope-related errors (undeclared use, redefinitions, undefined function call).
 
 ### Build
-Build a single binary that runs Lexer → Parser → Scope Analyzer → Type Checker → IR:
+Build a single binary that runs Lexer → Parser → Scope Analyzer → Type Checker → IR → LLVM IR/RISC-V:
 ```bash
 mkdir -p build
 g++ -std=c++17 -O2 \
@@ -120,6 +122,8 @@ g++ -std=c++17 -O2 \
   Non_Regex/scope_analyzer.cpp \
   Non_Regex/type_checker.cpp \
   Non_Regex/ir_generator.cpp \
+  Non_Regex/llvm_backend.cpp \
+  Non_Regex/riscv_backend.cpp \
   Non_Regex/main.cpp \
   -o build/scope_analyzer
 ```
@@ -184,6 +188,65 @@ Notes:
 - The `.tac` file is overwritten on each run for the same input.
 
 ---
+## LLVM IR Emission (Non_Regex)
+
+After IR generation, the tool emits a textual LLVM IR module (.ll) next to your input file.
+
+### Build (included in unified build)
+Use the unified build above (includes `llvm_backend.cpp`).
+
+### Run (produces .ll)
+```bash
+./build/scope_analyzer tests/test_scope_valid.txt
+cat tests/test_scope_valid.ll
+```
+
+### Make an executable from .ll
+- Method A (llvm-as + llc + cc):
+```bash
+llvm-as tests/test_scope_valid.ll -o tests/out.bc
+llc tests/out.bc -filetype=obj -o tests/out.o
+cc tests/out.o -o tests/a.out
+tests/a.out
+```
+- Method B (clang directly):
+```bash
+clang tests/test_scope_valid.ll -o tests/a.out
+tests/a.out
+```
+
+Notes:
+- PRINT lowering requires a runtime stub or mapping to printf (planned enhancement).
+
+---
+## RISC-V Assembly Emission (Non_Regex)
+
+The tool also emits RISC-V RV32I/M GNU assembly (.s) from TAC. This is useful for testing on a RISC-V toolchain or emulator.
+
+### Build (included in unified build)
+Use the unified build above (includes `riscv_backend.cpp`).
+
+### Run (produces .s)
+```bash
+./build/scope_analyzer tests/test_scope_valid.txt
+sed -n '1,120p' tests/test_scope_valid.s
+```
+
+### Assemble and link (requires RISC-V toolchain)
+- With clang’s RISC-V target:
+```bash
+clang -target riscv32 -march=rv32im tests/test_scope_valid.s -o tests/a_rv32
+```
+- Or with a cross GCC:
+```bash
+riscv32-unknown-elf-gcc -march=rv32im tests/test_scope_valid.s -o tests/a_rv32
+```
+
+Notes:
+- Current CALL lowering passes placeholder zeros in a0.. for args (argument threading from PARAM planned next).
+- Array/pointer ops are stubbed; core arithmetic, comparisons, branches, returns, and copies are implemented.
+
+---
 ## Troubleshooting
 - “Could not open file”: Ensure you pass a valid path. Avoid leading `/` unless it’s an absolute path that exists.
 - Multiple binaries: If you’ve built to both repo root and subfolders previously, prefer the ones under `Non_Regex/` and `Regex/` per the commands above.
@@ -207,7 +270,7 @@ g++ -std=c++17 Regex/main.cpp Regex/lexer.cpp Regex/token.cpp -o Regex/regex_dem
 
 # Build & run Scope Analyzer (Non_Regex)
 mkdir -p build
-g++ -std=c++17 -O2 Non_Regex/lexer.cpp Non_Regex/token.cpp Non_Regex/parser.cpp Non_Regex/scope_analyzer.cpp Non_Regex/type_checker.cpp Non_Regex/ir_generator.cpp Non_Regex/main.cpp -o build/scope_analyzer
+g++ -std=c++17 -O2 Non_Regex/lexer.cpp Non_Regex/token.cpp Non_Regex/parser.cpp Non_Regex/scope_analyzer.cpp Non_Regex/type_checker.cpp Non_Regex/ir_generator.cpp Non_Regex/llvm_backend.cpp Non_Regex/riscv_backend.cpp Non_Regex/main.cpp -o build/scope_analyzer
 ./build/scope_analyzer tests/test_scope_valid.txt
 for f in tests/test_scope_*.txt; do ./build/scope_analyzer "$f"; done
 ```
