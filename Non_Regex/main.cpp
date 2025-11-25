@@ -3,9 +3,12 @@
 #include "token.h"
 #include "scope_analyzer.h"
 #include "type_checker.h"
+#include "ir_generator.h"
 #include <iostream>
 #include <string>
 #include <vector>
+#include <fstream>
+#include <memory>
 
 int main(int argc, char** argv) {
 	// Use a file input by default; allow passing a source file path as argv[1]
@@ -106,10 +109,72 @@ int main(int argc, char** argv) {
 	if (type_result.hasErrors()) {
 		std::cerr << "\n❌ Type checking completed with " << type_result.errors.size() 
 		          << " error(s)." << std::endl;
+		std::cerr << "Skipping IR generation due to type errors." << std::endl;
 		return 1;
 	} else {
 		std::cout << "\n✓ Type checking completed successfully - No type errors found." << std::endl;
 	}
+	
+	// Step 5: IR Generation
+	std::cout << "\n=== STEP 5: INTERMEDIATE REPRESENTATION (IR) GENERATION ===" << std::endl;
+	IRGenerator ir_generator;
+	IRGenResult ir_result = ir_generator.generate(
+		ast,
+		std::make_shared<ScopeAnalysisResult>(result),
+		std::make_shared<TypeCheckResult>(type_result)
+	);
+	
+	if (ir_result.hasErrors()) {
+		std::cerr << "\n⚠ IR generation completed with warnings:" << std::endl;
+		for (const auto& error : ir_result.errors) {
+			std::string error_type;
+			switch (error.error_type) {
+				case IRGenError::InvalidExpression: error_type = "InvalidExpression"; break;
+				case IRGenError::InvalidStatement: error_type = "InvalidStatement"; break;
+				case IRGenError::UndefinedVariable: error_type = "UndefinedVariable"; break;
+				case IRGenError::UndefinedFunction: error_type = "UndefinedFunction"; break;
+				case IRGenError::TypeMismatch: error_type = "TypeMismatch"; break;
+				case IRGenError::InvalidOperand: error_type = "InvalidOperand"; break;
+				default: error_type = "Unknown"; break;
+			}
+			std::cout << "  [" << error_type << "] " << error.message;
+			if (error.related_symbol.has_value()) {
+				std::cout << " (Symbol: " << error.related_symbol.value() << ")";
+			}
+			std::cout << std::endl;
+		}
+	} else {
+		std::cout << "✓ IR generation completed successfully." << std::endl;
+	}
+	
+	// Print generated IR
+	std::cout << "\n--- Three-Address Code (TAC) ---" << std::endl;
+	std::cout << ir_result.program.toString() << std::endl;
+	
+	// Optionally save IR to file
+	std::string ir_filename = input;
+	size_t last_dot = ir_filename.find_last_of(".");
+	if (last_dot != std::string::npos) {
+		ir_filename = ir_filename.substr(0, last_dot);
+	}
+	ir_filename += ".tac";
+	
+	std::ofstream ir_file(ir_filename);
+	if (ir_file.is_open()) {
+		ir_file << ir_result.program.toString();
+		ir_file.close();
+		std::cout << "IR code saved to: " << ir_filename << std::endl;
+	}
+	
+	// IR Statistics
+	std::cout << "\n--- IR Statistics ---" << std::endl;
+	std::cout << "Functions: " << ir_result.program.functions.size() << std::endl;
+	std::cout << "Global variables: " << ir_result.program.global_vars.size() << std::endl;
+	int total_instructions = 0;
+	for (const auto& func : ir_result.program.functions) {
+		total_instructions += func.instructions.size();
+	}
+	std::cout << "Total TAC instructions: " << total_instructions << std::endl;
 	
 	// Compilation Summary
 	std::cout << "\n" << std::string(60, '=') << std::endl;
@@ -120,6 +185,7 @@ int main(int argc, char** argv) {
 	std::cout << "  ✓ Syntax Analysis (Parsing)" << std::endl;
 	std::cout << "  ✓ Semantic Analysis (Scope Checking)" << std::endl;
 	std::cout << "  ✓ Semantic Analysis (Type Checking)" << std::endl;
+	std::cout << "  ✓ IR Generation (Three-Address Code)" << std::endl;
 	std::cout << std::string(60, '=') << std::endl;
 	
 	return 0;

@@ -1,0 +1,105 @@
+# Compiler Makefile with IR Generation
+CXX = g++
+CXXFLAGS = -std=c++17 -Wall -Wextra -g
+
+# Source files
+SOURCES = lexer.cpp token.cpp parser.cpp scope_analyzer.cpp type_checker.cpp ir_generator.cpp
+OBJECTS = $(SOURCES:.cpp=.o)
+
+# Main targets
+MAIN_SOURCES = main.cpp
+IR_DEMO_SOURCES = ir_demo.cpp
+
+# Executables
+COMPILER = compiler
+IR_DEMO = ir_demo
+TYPE_CHECKER_DEMO = type_checker_demo
+
+.PHONY: all clean test test-ir help
+
+all: $(COMPILER) $(IR_DEMO) $(TYPE_CHECKER_DEMO)
+
+# Main compiler executable
+$(COMPILER): $(OBJECTS) main.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+# IR demo executable
+$(IR_DEMO): $(OBJECTS) ir_demo.o
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+# Type checker demo
+$(TYPE_CHECKER_DEMO): lexer.o token.o parser.o scope_analyzer.o type_checker.o type_checker.cpp
+	$(CXX) $(CXXFLAGS) -DTYPE_CHECKER_MAIN -o $@ $^
+
+# Object files
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Dependencies
+lexer.o: lexer.cpp lexer.h token.h
+token.o: token.cpp token.h
+parser.o: parser.cpp parser.h lexer.h token.h
+scope_analyzer.o: scope_analyzer.cpp scope_analyzer.h parser.h
+type_checker.o: type_checker.cpp type_checker.h parser.h scope_analyzer.h
+ir_generator.o: ir_generator.cpp ir_generator.h parser.h scope_analyzer.h type_checker.h
+main.o: main.cpp lexer.h parser.h scope_analyzer.h type_checker.h ir_generator.h
+ir_demo.o: ir_demo.cpp lexer.h parser.h scope_analyzer.h type_checker.h ir_generator.h
+
+# Test targets
+test: $(COMPILER)
+	@echo "Running basic compilation test..."
+	./$(COMPILER) sample_program.txt
+
+test-ir: $(IR_DEMO)
+	@echo "=== Testing IR Generation - Simple Test ==="
+	./$(IR_DEMO) ../tests/ir_test_simple.src ../tests/ir_test_simple.tac
+	@echo ""
+	@echo "=== Testing IR Generation - Comprehensive Test ==="
+	./$(IR_DEMO) ../tests/ir_test_comprehensive.src ../tests/ir_test_comprehensive.tac
+
+test-all: $(COMPILER) $(IR_DEMO)
+	@echo "=== Running all tests ==="
+	@echo ""
+	@echo "=== Test 1: Valid types ==="
+	./$(COMPILER) ../tests/valid_types.src
+	@echo ""
+	@echo "=== Test 2: Simple valid ==="
+	./$(COMPILER) ../tests/simple_valid.src
+	@echo ""
+	@echo "=== Test 3: IR Generation - Simple ==="
+	./$(IR_DEMO) ../tests/ir_test_simple.src
+	@echo ""
+	@echo "=== Test 4: IR Generation - Comprehensive ==="
+	./$(IR_DEMO) ../tests/ir_test_comprehensive.src
+
+# Clean build artifacts
+clean:
+	rm -f $(OBJECTS) main.o ir_demo.o
+	rm -f $(COMPILER) $(IR_DEMO) $(TYPE_CHECKER_DEMO)
+	rm -f *.tac
+	rm -f ../tests/*.tac
+	@echo "Cleaned build artifacts"
+
+# Help target
+help:
+	@echo "Compiler Makefile - Available targets:"
+	@echo ""
+	@echo "  make              - Build all executables"
+	@echo "  make compiler     - Build main compiler"
+	@echo "  make ir_demo      - Build IR generation demo"
+	@echo "  make test         - Run basic test"
+	@echo "  make test-ir      - Run IR generation tests"
+	@echo "  make test-all     - Run all tests"
+	@echo "  make clean        - Remove build artifacts"
+	@echo "  make help         - Show this help message"
+	@echo ""
+	@echo "Compilation phases:"
+	@echo "  1. Lexical Analysis (Tokenization)"
+	@echo "  2. Syntax Analysis (Parsing)"
+	@echo "  3. Semantic Analysis (Scope Checking)"
+	@echo "  4. Semantic Analysis (Type Checking)"
+	@echo "  5. IR Generation (Three-Address Code)"
+	@echo ""
+	@echo "Example usage:"
+	@echo "  ./compiler sample_program.txt"
+	@echo "  ./ir_demo ../tests/ir_test_simple.src output.tac"

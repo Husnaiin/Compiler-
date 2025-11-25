@@ -1,0 +1,26 @@
+// Simple test for IR generation
+int x = 5;
+int y = 10;
+
+function int add(int a, int b) {
+    return a + b;
+}
+
+function int main() {
+    int result = add(x, y);
+    print result;
+    
+    if (result > 10) {
+        print 1;
+    } else {
+        print 0;
+    }
+    
+    int i = 0;
+    while (i < 5) {
+        print i;
+        i = i + 1;
+    }
+    
+    return 0;
+}
