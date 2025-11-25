@@ -9,6 +9,12 @@
     return t0
 .end_function
 
+# Function: add (returns int)
+.function add
+# Parameters: a, b, c
+    return 0
+.end_function
+
 # Function: main (returns int)
 .function main
     nested = local_x

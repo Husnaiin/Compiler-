@@ -4,6 +4,7 @@
 #include "scope_analyzer.h"
 #include "type_checker.h"
 #include "ir_generator.h"
+#include "llvm_backend.h"
 #include <iostream>
 #include <string>
 #include <vector>
@@ -182,6 +183,26 @@ int main(int argc, char** argv) {
 	}
 	std::cout << "Total TAC instructions: " << total_instructions << std::endl;
 	
+	// Step 6: LLVM IR emission (textual)
+	std::cout << "\n=== STEP 6: LLVM IR (text) EMISSION ===" << std::endl;
+	{
+		LLVMBackend llvm_backend;
+		std::string ll_filename = input;
+		size_t last_dot2 = ll_filename.find_last_of(".");
+		if (last_dot2 != std::string::npos) {
+			ll_filename = ll_filename.substr(0, last_dot2);
+		}
+		ll_filename += ".ll";
+		bool ok = llvm_backend.emitModule(ir_result.program, "toy_module", ll_filename);
+		if (ok) {
+			std::cout << "LLVM IR saved to: " << ll_filename << std::endl;
+			std::cout << "You can build it with:" << std::endl;
+			std::cout << "  llvm-as " << ll_filename << " -o out.bc && llc out.bc -filetype=obj -o out.o && cc out.o -o a.out" << std::endl;
+		} else {
+			std::cerr << "Failed to generate LLVM IR file." << std::endl;
+		}
+	}
+	
 	// Compilation Summary
 	std::cout << "\n" << std::string(60, '=') << std::endl;
 	std::cout << "COMPILATION SUCCESSFUL" << std::endl;
@@ -192,6 +213,7 @@ int main(int argc, char** argv) {
 	std::cout << "  Semantic Analysis (Scope Checking)" << std::endl;
 	std::cout << "  Semantic Analysis (Type Checking)" << std::endl;
 	std::cout << "  IR Generation (Three-Address Code)" << std::endl;
+	std::cout << "  LLVM IR Emission (.ll)" << std::endl;
 	std::cout << std::string(60, '=') << std::endl;
 	
 	return 0;
