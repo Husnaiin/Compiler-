@@ -13,7 +13,9 @@ enum class ScopeError {
     UndeclaredVariableAccessed,
     UndefinedFunctionCalled,
     VariableRedefinition,
-    FunctionPrototypeRedefinition
+    FunctionPrototypeRedefinition,
+    InvalidBreak,
+    InvalidContinue
 };
 
 // Source Location for error reporting
@@ -130,7 +132,8 @@ private:
     ScopeId next_scope_id_;
     
     // Loop context tracking for break/continue validation
-    int loop_depth_;  // Tracks nesting level of loops (while, for, do-while, switch)
+    int loop_depth_;    // Tracks nesting level of loops (while, for, do-while)
+    int switch_depth_;  // Tracks nesting level of switch statements
     
     // Helper methods
     ScopeId current_scope_id() const;

@@ -1,6 +1,6 @@
 # Compiler with IR Generator - Quick Start Guide
 
-## 🎯 Overview
+## Overview
 
 A complete compiler implementation featuring:
 - ✅ Lexical Analysis
@@ -10,7 +10,7 @@ A complete compiler implementation featuring:
 - ✅ Proper break/continue validation
 - ✅ Comprehensive error handling
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Build
 ```bash
@@ -27,7 +27,7 @@ make -f Makefile_IR
 ./ir_demo ../tests/ir_test_simple.src output.tac
 ```
 
-## 📁 Project Structure
+## Project Structure
 
 ```
 Compiler-/
@@ -36,9 +36,9 @@ Compiler-/
 │   ├── parser.cpp/.h             # AST generation
 │   ├── scope_analyzer.cpp/.h     # Scope checking
 │   ├── type_checker.cpp/.h       # Type checking
-│   ├── ir_generator.cpp/.h       # IR generation ✨ NEW
+│   ├── ir_generator.cpp/.h       # IR generation (NEW)
 │   ├── main.cpp                  # Main compiler
-│   ├── ir_demo.cpp               # IR demo ✨ NEW
+│   ├── ir_demo.cpp               # IR demo (NEW)
 │   ├── Makefile_IR               # Build system
 │   └── *.md                      # Documentation
 └── tests/
@@ -47,7 +47,7 @@ Compiler-/
     └── ir_test_comprehensive.src # Full IR test
 ```
 
-## 🔧 Build Targets
+## Build Targets
 
 ```bash
 make -f Makefile_IR              # Build all
@@ -60,7 +60,7 @@ make -f Makefile_IR test-all     # Run all tests
 make -f Makefile_IR help         # Show help
 ```
 
-## 💡 Example Usage
+## Example Usage
 
 ### Input Program (`test.src`)
 ```c
@@ -119,7 +119,7 @@ L1:
 .end_function
 ```
 
-## 📊 TAC Instructions
+## TAC Instructions
 
 ### Arithmetic
 ```
@@ -157,7 +157,7 @@ t4 = a > b     # GT
 t5 = a >= b    # GE
 ```
 
-## 🎨 Language Features
+## Language Features
 
 ### Data Types
 - `int`, `float`, `char`, `string`, `bool`
@@ -177,17 +177,17 @@ t5 = a >= b    # GE
 - Logical: `&&`, `||`, `!`
 - Bitwise: `&`, `|`, `^`, `~`, `<<`, `>>`
 
-## ✅ Key Features
+## Key Features
 
 ### Break/Continue Validation
 ```cpp
-// ✅ Valid
+// Valid
 while (i < 10) {
     if (i == 5) break;
     i++;
 }
 
-// ❌ Invalid - ERROR!
+// Invalid - ERROR!
 if (x > 0) {
     break;  // Not in a loop!
 }
@@ -208,12 +208,12 @@ L1:
 ```c
 int x = 10;
 float y = 3.14;
-int z = x + y;  // ✅ OK - implicit cast float→int
+int z = x + y;  // OK - implicit cast float→int
 
-bool b = x + y;  // ❌ ERROR - can't assign numeric to bool
+bool b = x + y;  // ERROR - can't assign numeric to bool
 ```
 
-## 📖 Documentation
+## Documentation
 
 - `COMPILER_SUMMARY.md` - Complete overview
 - `IR_GENERATOR_README.md` - TAC format details
@@ -221,7 +221,7 @@ bool b = x + y;  // ❌ ERROR - can't assign numeric to bool
 - `TYPE_CHECKER_README.md` - Type system
 - `BNF_GRAMMAR.md` - Language grammar
 
-## 🔬 Testing
+## Testing
 
 ### Test Files
 - `tests/simple_valid.src` - Basic valid program
@@ -241,7 +241,7 @@ bool b = x + y;  // ❌ ERROR - can't assign numeric to bool
 make -f Makefile_IR test-all
 ```
 
-## 🐛 Error Detection
+## Error Detection
 
 The compiler detects and reports:
 
@@ -264,7 +264,7 @@ The compiler detects and reports:
 - Invalid expressions
 - Type incompatibilities
 
-## 🚀 Next Steps (Bonus Features)
+## Next Steps (Bonus Features)
 
 ### Bonus A: Assembler
 Generate native code for:
@@ -278,7 +278,7 @@ Generate native code for:
 - Generate executable binaries
 - Use QBE lightweight backend
 
-## 📈 Compilation Pipeline
+## Compilation Pipeline
 
 ```
 Source Code
@@ -291,7 +291,7 @@ Source Code
     ↓
 [Type Checker] → Type-checked AST
     ↓
-[IR Generator] → TAC ← YOU ARE HERE! ✨
+[IR Generator] → TAC (YOU ARE HERE)
     ↓
 [Optimizer] → Optimized TAC (future)
     ↓
@@ -300,14 +300,14 @@ Source Code
 Executable
 ```
 
-## 💻 System Requirements
+## System Requirements
 
 - C++17 or later
 - g++ or clang++
 - Make
 - Linux/macOS/WSL
 
-## 🎓 Learning Resources
+## Learning Resources
 
 Read the documentation in order:
 1. `COMPILER_SUMMARY.md` - Start here
@@ -316,7 +316,7 @@ Read the documentation in order:
 4. `TYPE_CHECKER_README.md` - Type system
 5. `IR_GENERATOR_README.md` - TAC format
 
-## 🤝 Contributing
+## Contributing
 
 Potential improvements:
 - More optimization passes
@@ -325,7 +325,7 @@ Potential improvements:
 - Backend code generators
 - Standard library
 
-## 📝 Example Session
+## Example Session
 
 ```bash
 $ cd Non_Regex
@@ -336,34 +336,34 @@ g++ -std=c++17 -Wall -Wextra -g -o compiler ...
 
 $ ./compiler ../tests/simple_valid.src
 === STEP 1: LEXICAL ANALYSIS ===
-✓ Tokenization completed. Total tokens: 124
+Tokenization completed. Total tokens: 124
 
 === STEP 2: SYNTAX ANALYSIS ===
-✓ Parsing completed successfully.
+Parsing completed successfully.
 
 === STEP 3: SEMANTIC ANALYSIS - SCOPE CHECKING ===
-✓ Scope analysis completed successfully.
+Scope analysis completed successfully.
 
 === STEP 4: SEMANTIC ANALYSIS - TYPE CHECKING ===
-✓ Type checking completed successfully.
+Type checking completed successfully.
 
 === STEP 5: IR GENERATION ===
-✓ IR generation completed successfully.
+IR generation completed successfully.
 
 --- Three-Address Code (TAC) ---
 [... TAC output ...]
 
 IR code saved to: ../tests/simple_valid.tac
 
-✓✓✓ COMPILATION SUCCESSFUL ✓✓✓
+COMPILATION SUCCESSFUL
 ```
 
-## 🎉 Success!
+## Success!
 
 Your compiler now generates Three-Address Code (TAC) - a clean, platform-independent intermediate representation ready for optimization and code generation!
 
 ---
 
-**Status**: ✅ IR Generation Complete  
+**Status**: IR Generation Complete  
 **Date**: November 2025  
 **Next**: Optimization & Backend

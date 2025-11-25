@@ -886,14 +886,48 @@ TypeInfo TypeChecker::check_function_call(std::shared_ptr<FunctionCallNode> expr
     if (!expr) return TypeInfo();
     
     SourceLocation loc = get_node_location(expr.get());
-    auto symbol = lookup_symbol(expr->functionName);
     
-    if (!symbol.has_value()) {
-        // Already reported by scope analyzer
+    // Resolve overloaded function by name + arity first, then by parameter types
+    std::vector<SymbolInfo*> candidates;
+    size_t arity = expr->arguments.size();
+    for (auto& [symbol_id, symbol_info] : scope_result_.symbols) {
+        if ((symbol_info.kind == SymbolKind::Function || symbol_info.kind == SymbolKind::FunctionPrototype) &&
+            symbol_info.name == expr->functionName) {
+            // Count parameters from decl_node if available
+            size_t param_count = 0;
+            if (symbol_info.decl_node) {
+                if (auto fn = dynamic_cast<FunctionNode*>(symbol_info.decl_node)) {
+                    for (auto& p : fn->parameters) if (p) param_count++;
+                }
+            }
+            if (param_count == arity) {
+                candidates.push_back(const_cast<SymbolInfo*>(&symbol_info));
+            }
+        }
+    }
+    
+    if (candidates.empty()) {
+        // No overload with matching arity; surface param count error
+        // Try to find any function with this name to get expected count (first one)
+        for (auto& [symbol_id, symbol_info] : scope_result_.symbols) {
+            if ((symbol_info.kind == SymbolKind::Function || symbol_info.kind == SymbolKind::FunctionPrototype) &&
+                symbol_info.name == expr->functionName) {
+                TypeInfo any_func_type = get_symbol_type(symbol_id);
+                report_error(TypeChkError::FnCallParamCount,
+                           "Function '" + expr->functionName + "' expects " + 
+                           std::to_string(any_func_type.param_types.size()) + " arguments, got " + 
+                           std::to_string(arity),
+                           loc, expr->functionName);
+                return any_func_type;
+            }
+        }
+        // Function not found at all (already reported by scope analyzer)
         return TypeInfo();
     }
     
-    TypeInfo func_type = get_symbol_type(symbol.value()->id);
+    // Pick first candidate then validate parameter types
+    SymbolInfo* chosen = candidates.front();
+    TypeInfo func_type = get_symbol_type(chosen->id);
     
     if (!func_type.is_function) {
         report_error(TypeChkError::FnCallParamCount,
@@ -902,15 +936,7 @@ TypeInfo TypeChecker::check_function_call(std::shared_ptr<FunctionCallNode> expr
         return TypeInfo();
     }
     
-    // Check parameter count
-    if (expr->arguments.size() != func_type.param_types.size()) {
-        report_error(TypeChkError::FnCallParamCount,
-                   "Function '" + expr->functionName + "' expects " + 
-                   std::to_string(func_type.param_types.size()) + " arguments, got " + 
-                   std::to_string(expr->arguments.size()),
-                   loc, expr->functionName);
-        return func_type;  // Return function return type anyway
-    }
+    // Parameter count already matched by selection
     
     // Check parameter types
     for (size_t i = 0; i < expr->arguments.size(); i++) {

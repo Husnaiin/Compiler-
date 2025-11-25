@@ -20,12 +20,14 @@ cd Compiler-
 ## Directory layout (high-level)
 ```
 Compiler-/
-├─ Non_Regex/           # Lexer, Parser, and Scope Analyzer (C++17)
+├─ Non_Regex/           # Lexer, Parser, Scope Analyzer, Type Checker, IR (C++17)
 │  ├─ lexer.{h,cpp}
 │  ├─ token.{h,cpp}
 │  ├─ parser.{h,cpp}
 │  ├─ scope_analyzer.{h,cpp}
-│  └─ main.cpp          # Demo entrypoint: tokens → AST → scope analysis
+│  ├─ type_checker.{h,cpp}
+│  ├─ ir_generator.{h,cpp}
+│  └─ main.cpp          # Entry: tokens → AST → scope → types → IR
 ├─ Regex/               # Regex-based lexer variant
 │  ├─ lexer.{h,cpp}
 │  ├─ token.{h,cpp}
@@ -108,7 +110,7 @@ Scope analysis is implemented only in the `Non_Regex/` directory. It consumes th
 - and scope-related errors (undeclared use, redefinitions, undefined function call).
 
 ### Build
-Build a single binary that runs Lexer → Parser → Scope Analyzer:
+Build a single binary that runs Lexer → Parser → Scope Analyzer → Type Checker → IR:
 ```bash
 mkdir -p build
 g++ -std=c++17 -O2 \
@@ -116,6 +118,8 @@ g++ -std=c++17 -O2 \
   Non_Regex/token.cpp \
   Non_Regex/parser.cpp \
   Non_Regex/scope_analyzer.cpp \
+  Non_Regex/type_checker.cpp \
+  Non_Regex/ir_generator.cpp \
   Non_Regex/main.cpp \
   -o build/scope_analyzer
 ```
@@ -138,6 +142,46 @@ done
 Notes:
 - If you run without an argument, the demo may default to a sample file. Prefer passing an explicit test file path under `tests/`.
 - The scope analyzer currently targets the `Non_Regex` pipeline (there is no scope analysis under `Regex/`).
+
+---
+## Type Checker (Non_Regex)
+
+The type checker runs immediately after scope analysis within the same executable. It validates:
+- expression and assignment types,
+- function call argument types vs parameter types,
+- return types vs function return type,
+- operator operand types and compatibility.
+
+If scope errors are found, type checking is skipped.
+
+### Build (included in unified build)
+Use the same build command shown above (includes `type_checker.cpp`).
+
+### Run
+Same as scope analysis: pass a test file under `tests/`. Type checking runs automatically if scope analysis succeeds.
+
+---
+## IR Generator (Non_Regex)
+
+After successful type checking, the IR generator emits Three-Address Code (TAC).
+
+Artifacts:
+- TAC printed to stdout.
+- TAC saved next to the input as `<basename>.tac` (e.g., `tests/test_scope_valid.tac`).
+- IR statistics (functions, globals, instruction count).
+
+### Build (included in unified build)
+Use the same build command (includes `ir_generator.cpp`).
+
+### Run (generates TAC)
+```bash
+./build/scope_analyzer tests/test_scope_valid.txt
+cat tests/test_scope_valid.tac
+```
+
+Notes:
+- If scope/type errors are found, IR generation is skipped.
+- The `.tac` file is overwritten on each run for the same input.
 
 ---
 ## Troubleshooting
@@ -163,7 +207,7 @@ g++ -std=c++17 Regex/main.cpp Regex/lexer.cpp Regex/token.cpp -o Regex/regex_dem
 
 # Build & run Scope Analyzer (Non_Regex)
 mkdir -p build
-g++ -std=c++17 -O2 Non_Regex/lexer.cpp Non_Regex/token.cpp Non_Regex/parser.cpp Non_Regex/scope_analyzer.cpp Non_Regex/main.cpp -o build/scope_analyzer
+g++ -std=c++17 -O2 Non_Regex/lexer.cpp Non_Regex/token.cpp Non_Regex/parser.cpp Non_Regex/scope_analyzer.cpp Non_Regex/type_checker.cpp Non_Regex/ir_generator.cpp Non_Regex/main.cpp -o build/scope_analyzer
 ./build/scope_analyzer tests/test_scope_valid.txt
 for f in tests/test_scope_*.txt; do ./build/scope_analyzer "$f"; done
 ```

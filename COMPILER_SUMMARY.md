@@ -40,9 +40,9 @@ This is a comprehensive compiler implementation with full support for lexical an
   - Function forward reference support
 
 **Recent Improvements:**
-- ✅ Added loop depth tracking to validate break/continue statements
-- ✅ Switch statements properly allow break but not continue
-- ✅ Error reporting for misplaced break/continue statements
+- Added loop depth tracking to validate break/continue statements
+- Switch statements properly allow break but not continue
+- Error reporting for misplaced break/continue statements
 
 ### 4. Semantic Analysis - Type Checking
 - **Module**: `type_checker.cpp`, `type_checker.h`
@@ -57,7 +57,7 @@ This is a comprehensive compiler implementation with full support for lexical an
   - Operator type compatibility
   - Ternary operator type checking
 
-### 5. **Intermediate Representation (IR) Generation** ✨ NEW
+### 5. **Intermediate Representation (IR) Generation** (NEW)
 - **Module**: `ir_generator.cpp`, `ir_generator.h`
 - **Purpose**: Translates AST to Three-Address Code (TAC)
 - **Format**: TAC - platform-independent intermediate representation
@@ -118,14 +118,14 @@ Non_Regex/
 ├── parser.cpp, parser.h         # Parser and AST
 ├── scope_analyzer.cpp, .h       # Scope checking
 ├── type_checker.cpp, .h         # Type checking
-├── ir_generator.cpp, .h         # IR generation ✨ NEW
+├── ir_generator.cpp, .h         # IR generation (NEW)
 ├── main.cpp                     # Main compiler
-├── ir_demo.cpp                  # IR generation demo ✨ NEW
-├── Makefile_IR                  # Build system ✨ NEW
+├── ir_demo.cpp                  # IR generation demo (NEW)
+├── Makefile_IR                  # Build system (NEW)
 ├── BNF_GRAMMAR.md              # Language grammar
 ├── SCOPE_ANALYZER_README.md    # Scope docs
 ├── TYPE_CHECKER_README.md      # Type checking docs
-└── IR_GENERATOR_README.md      # IR generation docs ✨ NEW
+└── IR_GENERATOR_README.md      # IR generation docs (NEW)
 ```
 
 ## Building the Compiler
@@ -198,7 +198,7 @@ make -f Makefile_IR test-all
 - `for` loops
 - `do-while` loops
 - `switch-case` statements with default
-- `break` and `continue` statements ✅ (properly validated)
+- `break` and `continue` statements (properly validated)
 - Ternary operator (`? :`)
 
 ### Functions
@@ -236,7 +236,7 @@ make -f Makefile_IR test-all
 - Undefined functions
 - Variable redefinition
 - Function redefinition
-- **Invalid break/continue placement** ✅
+- **Invalid break/continue placement**
 
 ### Semantic Errors - Type
 - Type mismatches in operations
@@ -265,7 +265,7 @@ Source Code
     ↓
 [Type Checker] → Type-checked AST
     ↓
-[IR Generator] → Three-Address Code (TAC) ✨
+[IR Generator] → Three-Address Code (TAC)
     ↓
 [Optimizer] → Optimized TAC (future)
     ↓
@@ -276,7 +276,7 @@ Source Code
 
 ## Key Implementation Highlights
 
-### Break/Continue Validation ✅
+### Break/Continue Validation
 The scope analyzer now properly tracks loop context:
 ```cpp
 int loop_depth_;  // Tracks nesting level
@@ -313,7 +313,7 @@ end:
 ## Future Enhancements
 
 ### Immediate Next Steps
-1. ✅ IR Generator (COMPLETED)
+1. IR Generator (COMPLETED)
 2. IR Optimization passes
 3. Backend code generation
 
@@ -357,15 +357,15 @@ Target options:
 ## Testing
 
 ### Test Coverage
-- ✅ Lexical analysis
-- ✅ Syntax analysis
-- ✅ Scope checking
-- ✅ Type checking
-- ✅ IR generation
-- ✅ Break/continue validation
-- ✅ Control flow structures
-- ✅ Function calls
-- ✅ Expressions with operators
+- Lexical analysis
+- Syntax analysis
+- Scope checking
+- Type checking
+- IR generation
+- Break/continue validation
+- Control flow structures
+- Function calls
+- Expressions with operators
 
 ### Running Tests
 ```bash
@@ -383,18 +383,18 @@ Comprehensive documentation available:
 - `BNF_GRAMMAR.md` - Language grammar specification
 - `SCOPE_ANALYZER_README.md` - Scope analysis details
 - `TYPE_CHECKER_README.md` - Type checking guide
-- `IR_GENERATOR_README.md` - IR generation guide ✨
+- `IR_GENERATOR_README.md` - IR generation guide
 
 ## Conclusion
 
 This compiler implementation provides a solid foundation for language processing with:
-- ✅ Complete lexical and syntax analysis
-- ✅ Robust semantic analysis with proper scope and type checking
-- ✅ **Break/continue statement validation in scope analyzer**
-- ✅ **Three-Address Code (TAC) intermediate representation**
-- ✅ Comprehensive error handling
-- ✅ Clean, modular architecture
-- ✅ Extensive documentation
+- Complete lexical and syntax analysis
+- Robust semantic analysis with proper scope and type checking
+- **Break/continue statement validation in scope analyzer**
+- **Three-Address Code (TAC) intermediate representation**
+- Comprehensive error handling
+- Clean, modular architecture
+- Extensive documentation
 
 The IR generation module enables:
 - Platform-independent code representation
@@ -409,5 +409,5 @@ Developed as a comprehensive compiler implementation project demonstrating moder
 ---
 
 **Last Updated**: November 2025  
-**Status**: IR Generation Complete ✅  
+**Status**: IR Generation Complete  
 **Next Phase**: Optimization & Code Generation

@@ -6,7 +6,7 @@
 
 // Constructor
 ScopeAnalyzer::ScopeAnalyzer() 
-    : next_symbol_id_(1), next_scope_id_(1), loop_depth_(0) {
+    : next_symbol_id_(1), next_scope_id_(1), loop_depth_(0), switch_depth_(0) {
     // Create global scope
     push_scope(ScopeKind::Global);
 }
@@ -155,23 +155,23 @@ void ScopeAnalyzer::analyze_program(std::shared_ptr<ProgramNode> program) {
     for (auto& func : program->functions) {
         if (func) {
             SourceLocation loc = get_node_location(func.get());
-            
-            // Check if function already exists in global scope
-            auto existing = lookup_in_scope(func->name, global_scope);
-            if (existing.has_value()) {
-                SymbolInfo* existing_sym = existing.value();
-                if (existing_sym->kind == SymbolKind::Function || 
-                    existing_sym->kind == SymbolKind::FunctionPrototype) {
-                    // Check if it's the same function (redefinition) or different
-                    if (existing_sym->scope_id == global_scope) {
-                        report_error(ScopeError::FunctionPrototypeRedefinition,
-                                    "Function '" + func->name + "' already declared in this scope",
-                                    loc, func->name);
-                        continue;  // Skip this function
-                    }
+
+            // Support simple overloading by arity: use a composite key "<name>#<param_count>"
+            size_t arity = 0;
+            for (auto& p : func->parameters) if (p) arity++;
+            std::string func_key = func->name + "#" + std::to_string(arity);
+
+            // Check if function with same signature already exists in global scope
+            auto scope_it = scopes_.find(global_scope);
+            if (scope_it != scopes_.end()) {
+                if (scope_it->second.symbols.find(func_key) != scope_it->second.symbols.end()) {
+                    report_error(ScopeError::FunctionPrototypeRedefinition,
+                                "Function '" + func->name + "' with " + std::to_string(arity) + " parameter(s) already declared in this scope",
+                                loc, func->name);
+                    continue;  // Skip this function
                 }
             }
-            
+
             // Create new function symbol
             SymbolId func_id = create_symbol(func->name, SymbolKind::Function, loc, func->returnType);
             auto sym_it = symbols_.find(func_id);
@@ -180,11 +180,11 @@ void ScopeAnalyzer::analyze_program(std::shared_ptr<ProgramNode> program) {
                 sym_it->second.decl_node = func.get();
             }
             
-            // Insert into global scope
-            if (!insert_symbol(func->name, func_id, global_scope)) {
+            // Insert into global scope under composite key
+            if (!insert_symbol(func_key, func_id, global_scope)) {
                 // Shouldn't happen if we checked above, but handle it
                 report_error(ScopeError::FunctionPrototypeRedefinition,
-                            "Function '" + func->name + "' redefinition",
+                            "Function '" + func->name + "' redefinition for key " + func_key,
                             loc, func->name);
             }
         }
@@ -277,7 +277,7 @@ void ScopeAnalyzer::analyze_statement(std::shared_ptr<StatementNode> stmt) {
         if (do_while->condition) analyze_expression(do_while->condition);
     } else if (auto switch_stmt = std::dynamic_pointer_cast<SwitchStatementNode>(stmt)) {
         if (switch_stmt->expression) analyze_expression(switch_stmt->expression);
-        loop_depth_++;  // Enter switch (allows break)
+        switch_depth_++;  // Enter switch (allows break)
         for (auto& case_stmt : switch_stmt->cases) {
             if (case_stmt) {
                 if (case_stmt->value) analyze_expression(case_stmt->value);
@@ -291,22 +291,22 @@ void ScopeAnalyzer::analyze_statement(std::shared_ptr<StatementNode> stmt) {
                 analyze_statement(default_stmt);
             }
         }
-        loop_depth_--;  // Exit switch
+        switch_depth_--;  // Exit switch
     } else if (auto break_stmt = std::dynamic_pointer_cast<BreakStatementNode>(stmt)) {
         // Validate break is inside a loop or switch
-        if (loop_depth_ <= 0) {
+        if (loop_depth_ <= 0 && switch_depth_ <= 0) {
             SourceLocation loc = get_node_location(break_stmt.get());
-            report_error(ScopeError::VariableRedefinition,  // Reusing error type
-                        "Break statement not within loop or switch",
-                        loc, std::nullopt);
+            report_error(ScopeError::InvalidBreak,
+                         "Break statement not within loop or switch",
+                         loc, std::nullopt);
         }
     } else if (auto continue_stmt = std::dynamic_pointer_cast<ContinueStatementNode>(stmt)) {
         // Validate continue is inside a loop (not switch)
         if (loop_depth_ <= 0) {
             SourceLocation loc = get_node_location(continue_stmt.get());
-            report_error(ScopeError::VariableRedefinition,  // Reusing error type
-                        "Continue statement not within loop",
-                        loc, std::nullopt);
+            report_error(ScopeError::InvalidContinue,
+                         "Continue statement not within loop",
+                         loc, std::nullopt);
         }
     } else if (auto return_stmt = std::dynamic_pointer_cast<ReturnStatementNode>(stmt)) {
         if (return_stmt->expression) analyze_expression(return_stmt->expression);
@@ -435,12 +435,30 @@ void ScopeAnalyzer::analyze_function_call(std::shared_ptr<FunctionCallNode> call
     if (!call) return;
     
     SourceLocation call_loc = get_node_location(call.get());
-    auto symbol = lookup(call->functionName);
-    
+    // Resolve function by name + arity
+    size_t arity = call->arguments.size();
+    std::string func_key = call->functionName + "#" + std::to_string(arity);
+
+    std::optional<SymbolInfo*> symbol;
+    // Walk up the scope chain to find matching key
+    for (auto it = scope_stack_.rbegin(); it != scope_stack_.rend(); ++it) {
+        ScopeId scope_id = *it;
+        auto scope_it = scopes_.find(scope_id);
+        if (scope_it == scopes_.end()) continue;
+        auto k = scope_it->second.symbols.find(func_key);
+        if (k != scope_it->second.symbols.end()) {
+            auto sym_it = symbols_.find(k->second);
+            if (sym_it != symbols_.end()) {
+                symbol = &sym_it->second;
+                break;
+            }
+        }
+    }
+
     if (!symbol.has_value()) {
         report_error(ScopeError::UndefinedFunctionCalled,
-                    "Undefined function '" + call->functionName + "'",
-                    call_loc, call->functionName);
+                     "Undefined function overload '" + call->functionName + "' with " + std::to_string(arity) + " argument(s)",
+                     call_loc, call->functionName);
         annotations_[call.get()] = ASTAnnotation();  // Mark as unresolved
     } else {
         SymbolInfo* sym = symbol.value();
@@ -488,11 +506,14 @@ void ScopeAnalyzer::analyze_assignment(std::shared_ptr<AssignmentNode> assign) {
 ScopeAnalysisResult ScopeAnalyzer::analyze_scopes(std::shared_ptr<ProgramNode> ast) {
     // Reset state (except keep global scope)
     scope_stack_.clear();
+    scopes_.clear();
+    symbols_.clear();
     errors_.clear();
     annotations_.clear();
     next_symbol_id_ = 1;
     next_scope_id_ = 1;
     loop_depth_ = 0;
+    switch_depth_ = 0;
     
     // Recreate global scope
     push_scope(ScopeKind::Global);

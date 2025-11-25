@@ -118,6 +118,8 @@ int main(int argc, char* argv[]) {
                 case ScopeError::UndefinedFunctionCalled: error_type = "UndefinedFunction"; break;
                 case ScopeError::VariableRedefinition: error_type = "VariableRedefinition"; break;
                 case ScopeError::FunctionPrototypeRedefinition: error_type = "FunctionRedefinition"; break;
+                case ScopeError::InvalidBreak: error_type = "InvalidBreak"; break;
+                case ScopeError::InvalidContinue: error_type = "InvalidContinue"; break;
                 default: error_type = "Unknown"; break;
             }
             std::cout << "  [" << error_type << "] " << error.message;
@@ -202,10 +204,10 @@ int main(int argc, char* argv[]) {
     print_separator("COMPILATION COMPLETE");
     
     if (ir_result.success && !type_result->hasErrors()) {
-        std::cout << "✓ All phases completed successfully!\n";
+        std::cout << "All phases completed successfully!\n";
         return 0;
     } else {
-        std::cout << "⚠ Compilation completed with warnings/errors.\n";
+        std::cout << "Compilation completed with warnings/errors.\n";
         return ir_result.hasErrors() ? 1 : 0;
     }
 }

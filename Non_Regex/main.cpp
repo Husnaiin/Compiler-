@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
 	std::cout << "=== STEP 1: LEXICAL ANALYSIS ===" << std::endl;
 	Lexer lexer(input, isFile);
 	std::vector<Token> tokens = lexer.tokenize();
-	std::cout << "✓ Tokenization completed. Total tokens: " << tokens.size() << std::endl;
+	std::cout << "Tokenization completed. Total tokens: " << tokens.size() << std::endl;
 	
 	// Optional: Print first 20 and last 5 tokens for verification
 	std::cout << "\nFirst 20 tokens:" << std::endl;
@@ -44,11 +44,11 @@ int main(int argc, char** argv) {
 	auto ast = parser.parse();
 	
 	if (parser.hasErrors()) {
-		std::cerr << "\n❌ Parsing completed with " << parser.getErrorCount() << " error(s)." << std::endl;
+		std::cerr << "\nParsing completed with " << parser.getErrorCount() << " error(s)." << std::endl;
 		std::cerr << "AST may be incomplete due to parsing errors." << std::endl;
 		return 1;
 	}
-	std::cout << "✓ Parsing completed successfully." << std::endl;
+	std::cout << "Parsing completed successfully." << std::endl;
 	
 	std::cout << "\n=== ABSTRACT SYNTAX TREE (AST) ===" << std::endl;
 	parser.printAST(ast);
@@ -66,7 +66,7 @@ int main(int argc, char** argv) {
 	
 	// Check for scope errors
 	if (result.hasErrors()) {
-		std::cout << "\n❌ SCOPE ERRORS DETECTED:" << std::endl;
+		std::cout << "\nSCOPE ERRORS DETECTED:" << std::endl;
 		for (const auto& error : result.errors) {
 			std::string error_type;
 			switch (error.error_type) {
@@ -82,6 +82,12 @@ int main(int argc, char** argv) {
 				case ScopeError::FunctionPrototypeRedefinition:
 					error_type = "FunctionPrototypeRedefinition";
 					break;
+				case ScopeError::InvalidBreak:
+					error_type = "InvalidBreak";
+					break;
+				case ScopeError::InvalidContinue:
+					error_type = "InvalidContinue";
+					break;
 			}
 			std::cout << "  [" << error_type << "] " << error.message 
 			          << " at " << error.location.toString();
@@ -90,11 +96,11 @@ int main(int argc, char** argv) {
 			}
 			std::cout << std::endl;
 		}
-		std::cerr << "\n❌ Scope analysis completed with " << result.errors.size() 
+		std::cerr << "\nScope analysis completed with " << result.errors.size() 
 		          << " error(s). Skipping type checking." << std::endl;
 		return 1;
 	} else {
-		std::cout << "\n✓ Scope analysis completed successfully - No scope errors found." << std::endl;
+		std::cout << "\nScope analysis completed successfully - No scope errors found." << std::endl;
 	}
 	
 	// Step 4: Semantic Analysis - Type Checking
@@ -107,12 +113,12 @@ int main(int argc, char** argv) {
 	type_checker.print_type_errors();
 	
 	if (type_result.hasErrors()) {
-		std::cerr << "\n❌ Type checking completed with " << type_result.errors.size() 
+		std::cerr << "\nType checking completed with " << type_result.errors.size() 
 		          << " error(s)." << std::endl;
 		std::cerr << "Skipping IR generation due to type errors." << std::endl;
 		return 1;
 	} else {
-		std::cout << "\n✓ Type checking completed successfully - No type errors found." << std::endl;
+		std::cout << "\nType checking completed successfully - No type errors found." << std::endl;
 	}
 	
 	// Step 5: IR Generation
@@ -125,7 +131,7 @@ int main(int argc, char** argv) {
 	);
 	
 	if (ir_result.hasErrors()) {
-		std::cerr << "\n⚠ IR generation completed with warnings:" << std::endl;
+		std::cerr << "\nIR generation completed with warnings:" << std::endl;
 		for (const auto& error : ir_result.errors) {
 			std::string error_type;
 			switch (error.error_type) {
@@ -144,7 +150,7 @@ int main(int argc, char** argv) {
 			std::cout << std::endl;
 		}
 	} else {
-		std::cout << "✓ IR generation completed successfully." << std::endl;
+		std::cout << "IR generation completed successfully." << std::endl;
 	}
 	
 	// Print generated IR
@@ -178,14 +184,14 @@ int main(int argc, char** argv) {
 	
 	// Compilation Summary
 	std::cout << "\n" << std::string(60, '=') << std::endl;
-	std::cout << "✓✓✓ COMPILATION SUCCESSFUL ✓✓✓" << std::endl;
+	std::cout << "COMPILATION SUCCESSFUL" << std::endl;
 	std::cout << std::string(60, '=') << std::endl;
 	std::cout << "\nAll compilation phases completed successfully:" << std::endl;
-	std::cout << "  ✓ Lexical Analysis (Tokenization)" << std::endl;
-	std::cout << "  ✓ Syntax Analysis (Parsing)" << std::endl;
-	std::cout << "  ✓ Semantic Analysis (Scope Checking)" << std::endl;
-	std::cout << "  ✓ Semantic Analysis (Type Checking)" << std::endl;
-	std::cout << "  ✓ IR Generation (Three-Address Code)" << std::endl;
+	std::cout << "  Lexical Analysis (Tokenization)" << std::endl;
+	std::cout << "  Syntax Analysis (Parsing)" << std::endl;
+	std::cout << "  Semantic Analysis (Scope Checking)" << std::endl;
+	std::cout << "  Semantic Analysis (Type Checking)" << std::endl;
+	std::cout << "  IR Generation (Three-Address Code)" << std::endl;
 	std::cout << std::string(60, '=') << std::endl;
 	
 	return 0;
