@@ -1,120 +1,194 @@
-## Compiler – Lexers (Non_Regex and Regex)
+# A Compiler, End to End
 
-This repository contains two lexer implementations for a toy language:
-- Non_Regex: manual, character-by-character scanner with escape handling, comments, and positions stored in tokens
-- Regex: pattern-driven lexer using std::regex matching
+![C++](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)
+![LLVM](https://img.shields.io/badge/LLVM-IR%20emission-262D3A?logo=llvm&logoColor=white)
+![RISC-V](https://img.shields.io/badge/RISC--V-RV32IM-283272?logo=riscv&logoColor=white)
+![Build](https://img.shields.io/badge/build-g%2B%2B%20%7C%20clang%2B%2B-6DB33F)
+![Dependencies](https://img.shields.io/badge/dependencies-none-brightgreen)
+![License](https://img.shields.io/badge/License-MIT-yellow)
 
-Both versions build to small CLI programs you can run against source files.
+**Source text in, real assembly out — every stage written by hand, no parser generator, no LLVM library.**
 
-### Prerequisites
-- A C++17-capable compiler (g++ or clang++)
-- Linux/macOS shell (Windows works with MSYS/WSL)
+---
 
-### Clone
+## What This Is
+
+A complete compiler for a small imperative language, built from first principles in
+C++17. It takes a source file and carries it through all seven classical stages:
+characters become tokens, tokens become a syntax tree, the tree is checked for scope
+and type errors, and the validated tree is lowered to three-address code and then
+emitted as both **textual LLVM IR** and **RISC-V RV32IM assembly**.
+
+Nothing here is generated. There is no flex, no bison, no ANTLR, and no linking
+against libLLVM — the `.ll` output is written as text by `llvm_backend.cpp`. The point
+was to understand each stage by having to make every decision inside it, so the code
+is written to be read.
+
+The repository also contains a **second lexer** built on `std::regex`, kept
+side-by-side with the hand-written one so the two approaches can be compared on the
+same input.
+
+## Capabilities
+
+- **Seven-stage pipeline** — lexing, parsing, scope analysis, type checking, TAC
+  generation, LLVM IR emission, RISC-V emission — each stage independently inspectable
+- **Hand-written recursive-descent parser** producing a typed AST, with precedence
+  climbing for expressions
+- **Real scope analysis** — a scope tree with global, function and block levels, a
+  symbol table, and detection of undeclared use, redefinition, and calls to undefined
+  functions
+- **Full type checker** — assignment compatibility, call arity and argument types,
+  return-type agreement, operator operand rules, and implicit conversions
+- **Two backends from one IR** — the same three-address code lowers to LLVM IR and to
+  RV32IM assembly
+- **Fail-fast staging** — a stage runs only if the previous one produced no errors, so
+  a single scope mistake never cascades into a screenful of bogus type errors
+- **Zero dependencies** — a C++17 compiler is the only requirement
+- **Two lexer implementations** — hand-rolled character scanner vs `std::regex`
+
+## At a Glance
+
+| | |
+|---|---|
+| Language | C++17 |
+| Source lines | ~7,600 across 18 translation units |
+| Pipeline stages | 7 |
+| Largest stage | Parser — 1,632 lines |
+| Backends | LLVM IR (`.ll`), RISC-V RV32IM (`.s`) |
+| External dependencies | none |
+| Build | a single `g++` command |
+
+## Architecture
+
+```mermaid
+flowchart TD
+    SRC[["source file"]] --> LEX
+
+    subgraph FE["Front End"]
+        LEX["<b>1 · Lexer</b><br/>lexer.cpp<br/><i>character scanner</i>"]
+        PAR["<b>2 · Parser</b><br/>parser.cpp<br/><i>recursive descent</i>"]
+        LEX -->|"token stream"| PAR
+    end
+
+    subgraph MID["Semantic Analysis"]
+        SCO["<b>3 · Scope Analyzer</b><br/>scope_analyzer.cpp<br/><i>scope tree + symbol table</i>"]
+        TYP["<b>4 · Type Checker</b><br/>type_checker.cpp<br/><i>types, arity, returns</i>"]
+        SCO -->|"annotated AST"| TYP
+    end
+
+    subgraph BE["Back End"]
+        IR["<b>5 · IR Generator</b><br/>ir_generator.cpp<br/><i>three-address code</i>"]
+        LLVM["<b>6 · LLVM Backend</b><br/>llvm_backend.cpp"]
+        RV["<b>7 · RISC-V Backend</b><br/>riscv_backend.cpp"]
+        IR -->|"TAC"| LLVM
+        IR -->|"TAC"| RV
+    end
+
+    PAR -->|"AST"| SCO
+    TYP -->|"validated AST"| IR
+
+    IR --> OUTTAC[["name.tac"]]
+    LLVM --> OUTLL[["name.ll"]]
+    RV --> OUTS[["name.s"]]
+
+    LEX -.->|"lex error"| ERR
+    PAR -.->|"syntax error"| ERR
+    SCO -.->|"scope error"| ERR
+    TYP -.->|"type error"| ERR
+    ERR([Diagnostics —<br/>pipeline stops here])
+
+    style SRC fill:#e8f0fe,stroke:#4285f4,color:#000
+    style OUTLL fill:#e6f4ea,stroke:#34a853,color:#000
+    style OUTS fill:#e6f4ea,stroke:#34a853,color:#000
+    style OUTTAC fill:#e6f4ea,stroke:#34a853,color:#000
+    style ERR fill:#fce8e6,stroke:#ea4335,color:#000
+```
+
+Each stage is a gate. If the lexer throws, nothing downstream runs; if scope analysis
+reports an error, type checking is skipped; if type checking fails, no IR is emitted.
+That is deliberate — reporting type errors against a tree with unresolved symbols
+produces noise rather than information.
+
+### What each stage hands to the next
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant F as source file
+    participant L as Lexer
+    participant P as Parser
+    participant S as ScopeAnalyzer
+    participant T as TypeChecker
+    participant I as IRGenerator
+    participant B as Backends
+
+    F->>L: raw characters
+    L->>L: skip comments, resolve escapes, record line/col
+    L->>P: token vector with positions
+    P->>P: recursive descent, precedence climbing
+    P->>S: AST of typed nodes
+    S->>S: build scope tree, populate symbol table
+    S->>T: AST + symbol table + scope annotations
+    T->>T: resolve expression types, check calls and returns
+    T->>I: validated AST
+    I->>I: flatten to temporaries, linearise control flow
+    I->>B: TAC program (functions, globals, instructions)
+    B->>B: label and register mapping per target
+    B-->>F: .ll and .s written beside the input
+```
+
+### Why both backends go through TAC
+
+Both backends consume the same three-address code rather than walking the AST
+directly. Emitting LLVM IR straight from a tree is briefly simpler, but it means every
+new target re-implements control-flow flattening, temporary allocation and
+short-circuit expansion. Doing that once in `ir_generator.cpp` is why the RISC-V
+backend is a 260-line file instead of a second compiler.
+
+## Language Features
+
+| Category | Supported |
+|---|---|
+| Types | `int`, `float`, `string`, `bool`, `char`, `void` |
+| Declarations | variables, functions with typed parameters, `include` |
+| Control flow | `if` / `elif` / `else`, `for`, `while`, `do`, `switch` / `case` / `default` |
+| Jumps | `return`, `break`, `continue` |
+| Operators | arithmetic, comparison, logical, bitwise, shifts, compound assignment |
+| I/O | `print`, `read` |
+| Literals | integer, float, string, char with escapes, `true` / `false` / `null` |
+| Comments | `//` line and `/* */` block |
+
+The grammar is written out in [`Non_Regex/BNF_GRAMMAR.md`](Non_Regex/BNF_GRAMMAR.md).
+
+## Repository Layout
+
+```
+Non_Regex/                  The compiler (hand-written scanner)
+  lexer.{h,cpp}             Character-by-character tokeniser, escapes, positions
+  token.{h,cpp}             Token type and printing
+  parser.{h,cpp}            Recursive-descent parser, AST definitions
+  scope_analyzer.{h,cpp}    Scope tree, symbol table, scope diagnostics
+  type_checker.{h,cpp}      Type resolution and semantic diagnostics
+  ir_generator.{h,cpp}      Three-address code generation
+  llvm_backend.{h,cpp}      Textual LLVM IR (.ll) emission from TAC
+  riscv_backend.{h,cpp}     RV32IM GNU assembly (.s) emission from TAC
+  main.cpp                  Driver: runs and reports all seven stages
+  BNF_GRAMMAR.md            Grammar reference
+  *_README.md               Per-stage design notes
+Regex/                      Alternative std::regex lexer, same token stream
+tests/                      Valid programs and one file per error class
+COMPILER_SUMMARY.md         Stage-by-stage design walkthrough
+```
+
+## Build
+
+The only requirement is a C++17 compiler.
+
 ```bash
 git clone https://github.com/Husnaiin/Compiler-.git
 cd Compiler-
-```
-
----
-## Directory layout (high-level)
-```
-Compiler-/
-├─ Non_Regex/           # Lexer, Parser, Scope Analyzer, Type Checker, IR (C++17)
-│  ├─ lexer.{h,cpp}
-│  ├─ token.{h,cpp}
-│  ├─ parser.{h,cpp}
-│  ├─ scope_analyzer.{h,cpp}
-│  ├─ type_checker.{h,cpp}
-│  ├─ ir_generator.{h,cpp}
-│  ├─ llvm_backend.{h,cpp}     # LLVM IR (.ll) emission from TAC
-│  ├─ riscv_backend.{h,cpp}    # RISC-V assembly (.s) emission from TAC
-│  └─ main.cpp          # Entry: tokens → AST → scope → types → IR → LLVM/RISCV
-├─ Regex/               # Regex-based lexer variant
-│  ├─ lexer.{h,cpp}
-│  ├─ token.{h,cpp}
-│  └─ main.cpp
-├─ tests/               # Test programs (including scope analysis tests)
-└─ README.md
-```
-
----
-## Non_Regex lexer
-
-### Build
-```bash
-g++ -std=c++17 Non_Regex/main.cpp Non_Regex/lexer.cpp Non_Regex/token.cpp -o Non_Regex/non_regex_demo
-```
-
-### Run
-- With the built-in demo input (no args):
-```bash
-./Non_Regex/non_regex_demo
-```
-
-- With a source file (recommended):
-```bash
-./Non_Regex/non_regex_demo Non_Regex/sample.src
-```
-
-Tokens are printed without line/column in the console, but the lexer stores positions internally for error messages.
-
-### Test cases
-Comprehensive tests and error cases are provided under the shared `tests/` directory (used by both lexers).
-
-- Run the comprehensive valid test:
-```bash
-./Non_Regex/non_regex_demo tests/heavy_valid.src
-```
-
-- Error-focused tests (each should throw a clear error):
-```bash
-./Non_Regex/non_regex_demo tests/err_invalid_identifier.src
-./Non_Regex/non_regex_demo tests/err_unterminated_string.src
-./Non_Regex/non_regex_demo tests/err_unterminated_char.src
-./Non_Regex/non_regex_demo tests/err_unterminated_block_comment.src
-```
-
-Notes:
-- The lexer supports: keywords (fn, int, float, string, bool, char, if/elif/else, for/while/do, switch/case/default, return/break/continue, print/read, true/false/null/void/include), delimiters `()[]{}`, punctuation `, ; : . ?`, operators `+ - * / %`, assignments and compound assigns, comparisons, logical ops, bitwise ops, shifts, and string/char escapes. Single-line `//` and block `/* */` comments are skipped.
-- Invalid identifiers that start with a digit (e.g., `123abc`) raise an error. Unterminated strings/chars/comments also raise errors.
-
----
-## Regex lexer
-
-Files: `Regex/main.cpp`, `Regex/lexer.{h,cpp}`, `Regex/token.{h,cpp}`
-
-### Build
-```bash
-g++ -std=c++17 Regex/main.cpp Regex/lexer.cpp Regex/token.cpp -o Regex/regex_demo
-```
-
-### Run
-The Regex lexer expects a source file path:
-```bash
-./Regex/regex_demo <path/to/source_file>
-```
-Examples:
-```bash
-./Regex/regex_demo Non_Regex/sample.src
-./Regex/regex_demo tests/heavy_valid.src
-```
-
-The Regex version prints tokens via `toString()` (includes type/value and may include position info depending on implementation).
-
----
-## Scope Analyzer (Non_Regex)
-
-Scope analysis is implemented only in the `Non_Regex/` directory. It consumes the AST built by the `Non_Regex` parser and produces:
-- a scope tree (global/function/block scopes),
-- a symbol table (variables, parameters, functions),
-- annotations on AST nodes for later passes,
-- and scope-related errors (undeclared use, redefinitions, undefined function call).
-
-### Build
-Build a single binary that runs Lexer → Parser → Scope Analyzer → Type Checker → IR → LLVM IR/RISC-V:
-```bash
 mkdir -p build
+
 g++ -std=c++17 -O2 \
   Non_Regex/lexer.cpp \
   Non_Regex/token.cpp \
@@ -125,152 +199,122 @@ g++ -std=c++17 -O2 \
   Non_Regex/llvm_backend.cpp \
   Non_Regex/riscv_backend.cpp \
   Non_Regex/main.cpp \
-  -o build/scope_analyzer
+  -o build/compiler
 ```
 
-### Run on a single test
-Tests now live under the top-level `tests/` folder:
+`clang++` works in place of `g++`. On Windows, build under MSYS2 or WSL.
+
+## Usage
+
 ```bash
-./build/scope_analyzer tests/test_scope_valid.txt
+./build/compiler tests/test_scope_valid.txt
 ```
 
-### Run all scope tests
+That one command runs all seven stages and prints each. Beside the input file you
+will find:
+
+| Artifact | Produced by |
+|---|---|
+| `<name>.tac` | Stage 5 — three-address code |
+| `<name>.ll` | Stage 6 — textual LLVM IR |
+| `<name>.s` | Stage 7 — RISC-V RV32IM assembly |
+
+### Run the test suite
+
 ```bash
 for f in tests/test_scope_*.txt; do
   echo "=== $f ==="
-  ./build/scope_analyzer "$f"
-  echo
+  ./build/compiler "$f"
 done
 ```
 
-Notes:
-- If you run without an argument, the demo may default to a sample file. Prefer passing an explicit test file path under `tests/`.
-- The scope analyzer currently targets the `Non_Regex` pipeline (there is no scope analysis under `Regex/`).
+### Error cases
 
----
-## Type Checker (Non_Regex)
+Each of these stops the pipeline with one clear diagnostic:
 
-The type checker runs immediately after scope analysis within the same executable. It validates:
-- expression and assignment types,
-- function call argument types vs parameter types,
-- return types vs function return type,
-- operator operand types and compatibility.
-
-If scope errors are found, type checking is skipped.
-
-### Build (included in unified build)
-Use the same build command shown above (includes `type_checker.cpp`).
-
-### Run
-Same as scope analysis: pass a test file under `tests/`. Type checking runs automatically if scope analysis succeeds.
-
----
-## IR Generator (Non_Regex)
-
-After successful type checking, the IR generator emits Three-Address Code (TAC).
-
-Artifacts:
-- TAC printed to stdout.
-- TAC saved next to the input as `<basename>.tac` (e.g., `tests/test_scope_valid.tac`).
-- IR statistics (functions, globals, instruction count).
-
-### Build (included in unified build)
-Use the same build command (includes `ir_generator.cpp`).
-
-### Run (generates TAC)
 ```bash
-./build/scope_analyzer tests/test_scope_valid.txt
-cat tests/test_scope_valid.tac
+./build/compiler tests/err_invalid_identifier.src
+./build/compiler tests/err_unterminated_string.src
+./build/compiler tests/err_unterminated_char.src
+./build/compiler tests/err_unterminated_block_comment.src
 ```
 
-Notes:
-- If scope/type errors are found, IR generation is skipped.
-- The `.tac` file is overwritten on each run for the same input.
+### Turning the output into a running program
 
----
-## LLVM IR Emission (Non_Regex)
+From LLVM IR, letting clang do the work:
 
-After IR generation, the tool emits a textual LLVM IR module (.ll) next to your input file.
-
-### Build (included in unified build)
-Use the unified build above (includes `llvm_backend.cpp`).
-
-### Run (produces .ll)
 ```bash
-./build/scope_analyzer tests/test_scope_valid.txt
-cat tests/test_scope_valid.ll
+clang tests/test_scope_valid.ll -o a.out && ./a.out
 ```
 
-### Make an executable from .ll
-- Method A (llvm-as + llc + cc):
+Or the explicit route:
+
 ```bash
-llvm-as tests/test_scope_valid.ll -o tests/out.bc
-llc tests/out.bc -filetype=obj -o tests/out.o
-cc tests/out.o -o tests/a.out
-tests/a.out
-```
-- Method B (clang directly):
-```bash
-clang tests/test_scope_valid.ll -o tests/a.out
-tests/a.out
+llvm-as tests/test_scope_valid.ll -o out.bc
+llc out.bc -filetype=obj -o out.o
+cc out.o -o a.out
 ```
 
-Notes:
-- PRINT lowering requires a runtime stub or mapping to printf (planned enhancement).
+For RISC-V, with a cross toolchain:
 
----
-## RISC-V Assembly Emission (Non_Regex)
-
-The tool also emits RISC-V RV32I/M GNU assembly (.s) from TAC. This is useful for testing on a RISC-V toolchain or emulator.
-
-### Build (included in unified build)
-Use the unified build above (includes `riscv_backend.cpp`).
-
-### Run (produces .s)
 ```bash
-./build/scope_analyzer tests/test_scope_valid.txt
-sed -n '1,120p' tests/test_scope_valid.s
+clang -target riscv32 -march=rv32im tests/test_scope_valid.s -o a_rv32
+# or
+riscv32-unknown-elf-gcc -march=rv32im tests/test_scope_valid.s -o a_rv32
 ```
 
-### Assemble and link (requires RISC-V toolchain)
-- With clang’s RISC-V target:
+## The Regex Lexer
+
+A second lexer built on `std::regex`, producing the same token stream as the
+hand-written one. It exists for comparison — the pattern-driven version is far shorter
+and considerably slower.
+
 ```bash
-clang -target riscv32 -march=rv32im tests/test_scope_valid.s -o tests/a_rv32
-```
-- Or with a cross GCC:
-```bash
-riscv32-unknown-elf-gcc -march=rv32im tests/test_scope_valid.s -o tests/a_rv32
+g++ -std=c++17 Regex/main.cpp Regex/lexer.cpp Regex/token.cpp -o build/regex_lexer
+./build/regex_lexer tests/heavy_valid.src
 ```
 
-Notes:
-- Current CALL lowering passes placeholder zeros in a0.. for args (argument threading from PARAM planned next).
-- Array/pointer ops are stubbed; core arithmetic, comparisons, branches, returns, and copies are implemented.
+Scope analysis and everything after it live only under `Non_Regex/`.
 
----
+## Known Limitations
+
+Stated plainly, because a compiler that overstates itself wastes your afternoon.
+
+- `PRINT` lowering needs a runtime stub or a mapping to `printf`; the emitted IR
+  declares the call but no runtime ships with it
+- RISC-V `CALL` lowering passes placeholder zeros in `a0..`; threading real arguments
+  from `PARAM` instructions is the next task
+- Array and pointer operations are stubbed in the RISC-V backend — arithmetic,
+  comparisons, branches, copies and returns are implemented
+- No optimisation passes; TAC is emitted as generated
+- No register allocator on the RISC-V path beyond a direct mapping
+
 ## Troubleshooting
-- “Could not open file”: Ensure you pass a valid path. Avoid leading `/` unless it’s an absolute path that exists.
-- Multiple binaries: If you’ve built to both repo root and subfolders previously, prefer the ones under `Non_Regex/` and `Regex/` per the commands above.
-- Locale/encoding: Files should be UTF-8 without BOM for predictable behavior.
 
----
-## Quick commands recap
-```bash
-# Build both
-g++ -std=c++17 Non_Regex/main.cpp Non_Regex/lexer.cpp Non_Regex/token.cpp -o Non_Regex/non_regex_demo
-g++ -std=c++17 Regex/main.cpp Regex/lexer.cpp Regex/token.cpp -o Regex/regex_demo
+| Symptom | Cause |
+|---|---|
+| `Could not open file` | Wrong path, or a leading `/` made it absolute |
+| Parse error on a valid-looking file | Saved as UTF-8 **with** BOM — save without |
+| `.ll` will not assemble | Reaching a `PRINT` — see Known Limitations |
+| Stale results after an edit | Rebuild; `build/` is not tracked and never auto-rebuilds |
+| Linker errors on the build line | A `.cpp` is missing — all nine are required |
 
-# Run Non_Regex
-./Non_Regex/non_regex_demo                    # demo input
-./Non_Regex/non_regex_demo Non_Regex/sample.src
-./Non_Regex/non_regex_demo tests/heavy_valid.src
+## Roadmap
 
-# Run Regex
-./Regex/regex_demo Non_Regex/sample.src
-./Regex/regex_demo tests/heavy_valid.src
+- Argument threading through `PARAM` into RISC-V `CALL`
+- A minimal runtime so `print` works end-to-end
+- Constant folding and dead-code elimination over TAC
+- Array and pointer lowering in the RISC-V backend
+- A CMake build to replace the long `g++` invocation
 
-# Build & run Scope Analyzer (Non_Regex)
-mkdir -p build
-g++ -std=c++17 -O2 Non_Regex/lexer.cpp Non_Regex/token.cpp Non_Regex/parser.cpp Non_Regex/scope_analyzer.cpp Non_Regex/type_checker.cpp Non_Regex/ir_generator.cpp Non_Regex/llvm_backend.cpp Non_Regex/riscv_backend.cpp Non_Regex/main.cpp -o build/scope_analyzer
-./build/scope_analyzer tests/test_scope_valid.txt
-for f in tests/test_scope_*.txt; do ./build/scope_analyzer "$f"; done
-```
+## Contributing
+
+Issues and pull requests are welcome — see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+The short version: build cleanly with `-std=c++17`, add a file under `tests/` covering
+what you changed, and keep each stage's diagnostics inside that stage. The value of
+fail-fast staging disappears the moment the parser starts reporting type errors.
+
+## License
+
+[MIT](LICENSE).

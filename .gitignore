@@ -1,2 +1,40 @@
+# Build output
+build/
+*.o
+*.obj
+*.a
+*.lib
+*.so
+*.dylib
+*.dll
+*.exe
+*.out
+a.out
+*.bc
+
+# Compiler artifacts written next to test inputs
+*.tac
+*.ll
+*.s
+
+# Binaries produced by the documented build commands
+compiler
+regex_lexer
+non_regex_demo
+regex_demo
+ir_demo
+main
+scope_analyzer
+Non_Regex/compiler
+Non_Regex/ir_demo
+Non_Regex/main
+Non_Regex/non_regex_demo
+Regex/regex_demo
+
+# Editor / OS
 .vscode/tasks.json
 .vscode/settings.json
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
