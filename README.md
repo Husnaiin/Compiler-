@@ -276,18 +276,7 @@ g++ -std=c++17 Regex/main.cpp Regex/lexer.cpp Regex/token.cpp -o build/regex_lex
 
 Scope analysis and everything after it live only under `Non_Regex/`.
 
-## Known Limitations
 
-Stated plainly, because a compiler that overstates itself wastes your afternoon.
-
-- `PRINT` lowering needs a runtime stub or a mapping to `printf`; the emitted IR
-  declares the call but no runtime ships with it
-- RISC-V `CALL` lowering passes placeholder zeros in `a0..`; threading real arguments
-  from `PARAM` instructions is the next task
-- Array and pointer operations are stubbed in the RISC-V backend — arithmetic,
-  comparisons, branches, copies and returns are implemented
-- No optimisation passes; TAC is emitted as generated
-- No register allocator on the RISC-V path beyond a direct mapping
 
 ## Troubleshooting
 
